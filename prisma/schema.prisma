@@ -1,0 +1,142 @@
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
+
+  enum UserRole {
+    OWNER
+    MANAGER
+    ACCOUNTANT
+  }
+
+  enum ItemStatus {
+    RECEIVED
+    STORED
+    IN_PRODUCTION
+    READY
+    PARTIALLY_DISPATCHED
+    COMPLETED
+  }
+
+  model User {
+    id           Int      @id @default(autoincrement())
+    name         String
+    username     String   @unique
+    passwordHash String
+    role         UserRole
+
+    createdAt    DateTime @default(now())
+
+    permissions  UserPermission[]
+    activities   ActivityLog[]
+    isActive Boolean @default(true)
+  }
+
+  model Party {
+    id            Int      @id @default(autoincrement())
+
+    partyName     String
+    gstNumber     String?
+    address       String?
+    phone         String?
+    email         String?
+    contactPerson String?
+
+    isActive      Boolean @default(true)
+
+    createdAt     DateTime @default(now())
+
+    challans      Challan[]
+  }
+
+  model Challan {
+    id              Int      @id @default(autoincrement())
+
+    challanNumber   String
+    vehicleNumber   String?
+    ewayNumber      String?
+
+    receivedWeight  Float
+
+    receivedDate    DateTime @default(now())
+
+    partyId         Int
+    party           Party @relation(fields: [partyId], references: [id])
+
+    items           ChallanItem[]
+  }
+
+  model ChallanItem {
+    id                 Int @id @default(autoincrement())
+
+    itemName           String
+
+    receivedWeight     Float
+
+    currentWeight      Float
+
+    status             ItemStatus @default(RECEIVED)
+
+    challanId          Int
+    challan            Challan @relation(fields: [challanId], references: [id])
+
+    dispatchItems      DispatchItem[]
+  }
+
+  model Dispatch {
+    id              Int @id @default(autoincrement())
+
+    vehicleNumber   String?
+    remarks         String?
+
+    dispatchDate    DateTime @default(now())
+
+    items           DispatchItem[]
+  }
+
+  model DispatchItem {
+    id                 Int @id @default(autoincrement())
+
+    dispatchedWeight   Float
+
+    dispatchId         Int
+    dispatch           Dispatch @relation(fields: [dispatchId], references: [id])
+
+    challanItemId      Int
+    challanItem        ChallanItem @relation(fields: [challanItemId], references: [id])
+  }
+
+  model ActivityLog {
+    id          Int @id @default(autoincrement())
+
+    action      String
+    details     String?
+
+    createdAt   DateTime @default(now())
+
+    userId      Int
+    user        User @relation(fields: [userId], references: [id])
+  }
+  model Permission {
+    id          Int    @id @default(autoincrement())
+    code        String @unique
+    name        String
+
+    users       UserPermission[]
+  }
+
+  model UserPermission {
+    id            Int @id @default(autoincrement())
+
+    userId        Int
+    permissionId  Int
+
+    user          User @relation(fields: [userId], references: [id])
+    permission    Permission @relation(fields: [permissionId], references: [id])
+
+    @@unique([userId, permissionId])
+  }
