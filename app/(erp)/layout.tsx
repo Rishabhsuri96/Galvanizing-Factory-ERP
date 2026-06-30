@@ -140,6 +140,22 @@ export default async function RootLayout({
                                             </Link>
                                         )}
 
+                                    {permissions.includes(
+                                        "MANAGE_CONTRACTORS"
+                                    ) && (
+                                            <Link href="/contractors" className={sidebarLink}>
+                                                Contractors
+                                            </Link>
+                                        )}
+
+                                    {permissions.includes(
+                                        "MANAGE_FURNACES"
+                                    ) && (
+                                            <Link href="/furnaces" className={sidebarLink}>
+                                                Furnaces
+                                            </Link>
+                                        )}
+
                                 </div>
                             </div>
 
