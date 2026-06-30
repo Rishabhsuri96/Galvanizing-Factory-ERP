@@ -86,6 +86,13 @@
     challan            Challan @relation(fields: [challanId], references: [id])
 
     dispatchItems      DispatchItem[]
+
+    outputWeight      Float?
+    zincAddedWeight   Float?
+    zincPercentage    Float?
+    zincCost          Float?
+
+    productionItems   ProductionBatchItem[]
   }
 
   model Dispatch {
@@ -141,3 +148,66 @@
 
     @@unique([userId, permissionId])
   }
+
+  model Contractor {
+  id          Int @id @default(autoincrement())
+
+  name        String
+  phone       String?
+  ratePerKg   Float
+
+  isActive    Boolean @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches     ProductionBatch[]
+}
+model Furnace {
+  id          Int @id @default(autoincrement())
+
+  name        String
+
+  isActive    Boolean @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches     ProductionBatch[]
+}
+model ProductionBatch {
+  id            Int @id @default(autoincrement())
+
+  batchNo        String @unique
+
+  processDate    DateTime @default(now())
+
+  contractorId   Int?
+  furnaceId      Int?
+
+  remarks        String?
+
+  contractor      Contractor? @relation(fields: [contractorId], references: [id])
+
+  furnace         Furnace? @relation(fields: [furnaceId], references: [id])
+
+  items          ProductionBatchItem[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ProductionBatchItem {
+  id                  Int @id @default(autoincrement())
+
+  productionBatchId   Int
+  challanItemId       Int
+
+  processedWeight     Float
+
+  productionBatch ProductionBatch @relation(fields: [productionBatchId], references: [id])
+
+  challanItem ChallanItem @relation(fields: [challanItemId], references: [id])
+
+  createdAt DateTime @default(now())
+}

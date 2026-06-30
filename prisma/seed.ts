@@ -41,6 +41,30 @@ async function main() {
       code: "VIEW_ACTIVITY_LOGS",
       name: "View Activity Logs",
     },
+    {
+      code: "MANAGE_CONTRACTORS",
+      name: "Manage Contractors",
+    },
+    {
+      code: "MANAGE_FURNACES",
+      name: "Manage Furnaces",
+    },
+    {
+      code: "MANAGE_ZINC",
+      name: "Manage Zinc",
+    },
+    {
+      code: "MANAGE_EXPENSES",
+      name: "Manage Expenses",
+    },
+    {
+      code: "VIEW_ANALYTICS",
+      name: "View Analytics",
+    },
+    {
+      code: "USE_AI_ASSISTANT",
+      name: "Use AI Assistant",
+    },
   ];
 
   for (const permission of permissions) {
