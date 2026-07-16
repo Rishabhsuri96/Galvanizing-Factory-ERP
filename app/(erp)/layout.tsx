@@ -52,8 +52,7 @@ export default async function RootLayout({
 
                 <div className="flex h-screen">
 
-                    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col bg-gray-900 px-6 pt-3 pb-8 text-white">
-
+                    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col bg-gray-900 px-6 pt-3 text-white">
                         <div className="mb-8">
                             <h1 className="text-2xl font-bold">
                                 GFS ERP
@@ -64,172 +63,174 @@ export default async function RootLayout({
                             </p>
                         </div>
 
-                        <nav className="flex flex-1 flex-col gap-6">
+                        <nav className="flex-1 overflow-y-auto pr-2">
+                            <div className="flex flex-col gap-6">
+                                {/* Dashboard */}
 
-                            {/* Dashboard */}
+                                {permissions.includes(
+                                    "VIEW_DASHBOARD"
+                                ) && (
+                                        <Link
+                                            href="/dashboard"
+                                            className={sidebarLink}
+                                        >
+                                            Dashboard
+                                        </Link>
+                                    )}
 
-                            {permissions.includes(
-                                "VIEW_DASHBOARD"
-                            ) && (
-                                    <Link
-                                        href="/dashboard"
-                                        className={sidebarLink}
-                                    >
-                                        Dashboard
-                                    </Link>
-                                )}
+                                {/* Operations */}
 
-                            {/* Operations */}
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
+                                        Operations
+                                    </p>
 
-                            <div>
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
-                                    Operations
-                                </p>
+                                    <div className="flex flex-col gap-3">
 
-                                <div className="flex flex-col gap-3">
+                                        {permissions.includes(
+                                            "MANAGE_CHALLANS"
+                                        ) && (
+                                                <Link href="/challans" className={sidebarLink}>
+                                                    Challans
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "MANAGE_CHALLANS"
-                                    ) && (
-                                            <Link href="/challans" className={sidebarLink}>
-                                                Challans
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "MANAGE_CHALLANS"
+                                        ) && (
+                                                <Link href="/pending-challans" className={sidebarLink}>
+                                                    Pending Challans
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "MANAGE_CHALLANS"
-                                    ) && (
-                                            <Link href="/pending-challans" className={sidebarLink}>
-                                                Pending Challans
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "MANAGE_PRODUCTION"
+                                        ) && (
+                                                <Link href="/production" className={sidebarLink}>
+                                                    Production
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "MANAGE_PRODUCTION"
-                                    ) && (
-                                            <Link href="/production" className={sidebarLink}>
-                                                Production
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "MANAGE_DISPATCH"
+                                        ) && (
+                                                <Link href="/dispatch" className={sidebarLink}>
+                                                    Dispatch
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "MANAGE_DISPATCH"
-                                    ) && (
-                                            <Link href="/dispatch" className={sidebarLink}>
-                                                Dispatch
-                                            </Link>
-                                        )}
-
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Masters */}
+                                {/* Masters */}
 
-                            <div>
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
-                                    Masters
-                                </p>
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
+                                        Masters
+                                    </p>
 
-                                <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-3">
 
-                                    {permissions.includes(
-                                        "MANAGE_PARTIES"
-                                    ) && (
+                                        {permissions.includes("MANAGE_PARTIES") && (
                                             <Link href="/parties" className={sidebarLink}>
                                                 Parties
                                             </Link>
                                         )}
 
-                                    {permissions.includes(
-                                        "MANAGE_CONTRACTORS"
-                                    ) && (
+                                        {permissions.includes("MANAGE_CONTRACTORS") && (
                                             <Link href="/contractors" className={sidebarLink}>
                                                 Contractors
                                             </Link>
                                         )}
 
-                                    {permissions.includes(
-                                        "MANAGE_FURNACES"
-                                    ) && (
+                                        {permissions.includes("MANAGE_FURNACES") && (
                                             <Link href="/furnaces" className={sidebarLink}>
                                                 Furnaces
                                             </Link>
                                         )}
 
+                                        {permissions.includes("MANAGE_ITEM_CATEGORIES") && (
+                                            <Link href="/item-categories" className={sidebarLink}>
+                                                Item Categories
+                                            </Link>
+                                        )}
+
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Reports */}
+                                {/* Reports */}
 
-                            <div>
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
-                                    Reports
-                                </p>
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
+                                        Reports
+                                    </p>
 
-                                <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-3">
 
-                                    {permissions.includes(
-                                        "VIEW_SEARCH"
-                                    ) && (
-                                            <Link href="/search" className={sidebarLink}>
-                                                Search
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "VIEW_SEARCH"
+                                        ) && (
+                                                <Link href="/search" className={sidebarLink}>
+                                                    Search
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "VIEW_REPORTS"
-                                    ) && (
-                                            <Link href="/reports" className={sidebarLink}>
-                                                Reports
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "VIEW_REPORTS"
+                                        ) && (
+                                                <Link href="/reports" className={sidebarLink}>
+                                                    Reports
+                                                </Link>
+                                            )}
 
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Administration */}
+                                {/* Administration */}
 
-                            <div>
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
-                                    Administration
-                                </p>
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase text-gray-400">
+                                        Administration
+                                    </p>
 
-                                <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-3">
 
-                                    {permissions.includes(
-                                        "MANAGE_USERS"
-                                    ) && (
-                                            <Link href="/users" className={sidebarLink}>
-                                                Users
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "MANAGE_USERS"
+                                        ) && (
+                                                <Link href="/users" className={sidebarLink}>
+                                                    Users
+                                                </Link>
+                                            )}
 
-                                    {permissions.includes(
-                                        "VIEW_ACTIVITY_LOGS"
-                                    ) && (
-                                            <Link href="/activity-logs" className={sidebarLink}>
-                                                Activity Logs
-                                            </Link>
-                                        )}
+                                        {permissions.includes(
+                                            "VIEW_ACTIVITY_LOGS"
+                                        ) && (
+                                                <Link href="/activity-logs" className={sidebarLink}>
+                                                    Activity Logs
+                                                </Link>
+                                            )}
 
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="mt-auto border-t border-gray-700 pt-4 pb-8">
-
-                                <p className="text-xs text-gray-400">
-                                    Logged in as
-                                </p>
-
-                                <p className="mb-4 font-medium">
-                                    {displayName}
-                                </p>
-
-                                <LogoutButton />
 
                             </div>
+
 
                         </nav>
+                        <div className="border-t border-gray-700 pt-4 pb-4">
+
+                            <p className="text-xs text-gray-400">
+                                Logged in as
+                            </p>
+
+                            <p className="mb-4 font-medium">
+                                {displayName}
+                            </p>
+
+                            <LogoutButton />
+
+                        </div>
 
                     </aside>
 

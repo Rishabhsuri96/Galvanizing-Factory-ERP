@@ -1,194 +1,136 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import MarkReadyButton from "@/components/MarkReadyButton";
+import { requirePermission } from "@/lib/permissions";
 
 export default async function ProductionPage() {
-  const items = await prisma.challanItem.findMany({
-    include: {
-      challan: {
-        include: {
-          party: true,
-        },
+  await requirePermission("MANAGE_PRODUCTION");
+
+  const batches =
+    await prisma.productionBatch.findMany({
+      include: {
+        contractor: true,
+        furnace: true,
+        items: true,
       },
-    },
-    orderBy: {
-      id: "desc",
-    },
-  });
-  const readyItems = items.filter(
-  (item) => item.status === "READY"
-);
-
-const receivedItems = items.filter(
-  (item) => item.status === "RECEIVED"
-);
-
-const readyWeight = readyItems.reduce(
-  (sum, item) => sum + item.currentWeight,
-  0
-);
-
-const receivedWeight = receivedItems.reduce(
-  (sum, item) => sum + item.currentWeight,
-  0
-);
+      orderBy: {
+        processDate: "desc",
+      },
+    });
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Production
+          </h1>
 
-      <div>
+          <p className="text-gray-500">
+            Manage production batches
+          </p>
+        </div>
 
-        <h1 className="text-3xl font-bold">
-          Ready Material
-        </h1>
+        <Link
+          href="/production/new"
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          + New Batch
+        </Link>
+      </div>
 
-        <p className="text-gray-500">
-          Manage material ready for dispatch
+      <div className="rounded-lg border bg-white p-4">
+        <p className="text-sm text-gray-500">
+          Total Batches
         </p>
 
+        <p className="text-3xl font-bold">
+          {batches.length}
+        </p>
       </div>
-      <div className="grid grid-cols-4 gap-4">
 
-  <div className="bg-white border rounded-lg p-4">
-    <p className="text-sm text-gray-500">
-      Ready Items
-    </p>
-
-    <p className="text-2xl font-bold">
-      {readyItems.length}
-    </p>
-  </div>
-
-  <div className="bg-white border rounded-lg p-4">
-    <p className="text-sm text-gray-500">
-      Ready Weight
-    </p>
-
-    <p className="text-2xl font-bold">
-      {readyWeight} kg
-    </p>
-  </div>
-
-  <div className="bg-white border rounded-lg p-4">
-    <p className="text-sm text-gray-500">
-      Received Items
-    </p>
-
-    <p className="text-2xl font-bold">
-      {receivedItems.length}
-    </p>
-  </div>
-
-  <div className="bg-white border rounded-lg p-4">
-    <p className="text-sm text-gray-500">
-      Received Weight
-    </p>
-
-    <p className="text-2xl font-bold">
-      {receivedWeight} kg
-    </p>
-  </div>
-
-</div>
-
-      <div className="bg-white border rounded-lg overflow-hidden">
-
-        {items.length === 0 ? (
+      <div className="overflow-hidden rounded-lg border bg-white">
+        {batches.length === 0 ? (
           <div className="p-6">
-            No material found.
+            No production batches found.
           </div>
         ) : (
           <table className="w-full">
-
             <thead className="bg-gray-100">
-
               <tr>
-
-                <th className="text-left p-3">
-                  Party
+                <th className="p-3 text-left">
+                  Batch No
                 </th>
 
-                <th className="text-left p-3">
-                  Challan
+                <th className="p-3 text-left">
+                  Date
                 </th>
 
-                <th className="text-left p-3">
-                  Item
+                <th className="p-3 text-left">
+                  Contractor
                 </th>
 
-                <th className="text-left p-3">
-                  Received
+                <th className="p-3 text-left">
+                  Furnace
                 </th>
 
-                <th className="text-left p-3">
-                  Current
+                <th className="p-3 text-left">
+                  Shift
                 </th>
 
-                <th className="text-left p-3">
-                  Status
-                </th>
-                <th className="text-left p-3 w-40">
-                  Action
+                <th className="p-3 text-left">
+                  Items Count
                 </th>
 
+                <th className="p-3 text-left">
+                  Actions
+                </th>
               </tr>
-
             </thead>
 
             <tbody>
-
-              {items.map((item) => (
+              {batches.map((batch) => (
                 <tr
-                  key={item.id}
+                  key={batch.id}
                   className="border-t"
                 >
-
                   <td className="p-3">
-                    {item.challan.party.partyName}
+                    {batch.batchNo}
                   </td>
 
                   <td className="p-3">
-                    {item.challan.challanNumber}
+                    {batch.processDate.toLocaleDateString()}
                   </td>
 
                   <td className="p-3">
-                    {item.itemName}
+                    {batch.contractor.name}
                   </td>
 
                   <td className="p-3">
-                    {item.receivedWeight} kg
+                    {batch.furnace.name}
                   </td>
 
                   <td className="p-3">
-                    {item.currentWeight} kg
+                    {batch.shift}
                   </td>
 
                   <td className="p-3">
-                    {item.status}
+                    {batch.items.length}
                   </td>
+
                   <td className="p-3">
-
-                    {item.status === "RECEIVED" ||
-                      item.status === "READY" ? (
-                      <MarkReadyButton
-                        itemId={item.id}
-                        status={item.status}
-                      />
-                    ) : (
-                      "-"
-                    )}
-
+                    <Link
+                      href={`/production/${batch.id}`}
+                      className="rounded bg-blue-600 px-3 py-2 text-white"
+                    >
+                      View
+                    </Link>
                   </td>
-
                 </tr>
               ))}
-
             </tbody>
-
           </table>
         )}
-
       </div>
-
     </div>
   );
 }
