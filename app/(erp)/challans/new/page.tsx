@@ -3,18 +3,33 @@ import { prisma } from "@/lib/prisma";
 import { createChallan } from "./actions";
 export default async function NewChallanPage() {
 
-    const parties = await prisma.party.findMany({
-        where: {
-            isActive: true,
-        },
-        orderBy: {
-            partyName: "asc",
-        },
-        select: {
-            id: true,
-            partyName: true,
-        },
-    });
+    const [parties, itemCategories] =
+        await Promise.all([
+            prisma.party.findMany({
+                where: {
+                    isActive: true,
+                },
+                orderBy: {
+                    partyName: "asc",
+                },
+                select: {
+                    id: true,
+                    partyName: true,
+                },
+            }),
+            prisma.itemCategory.findMany({
+                where: {
+                    isActive: true,
+                },
+                orderBy: {
+                    name: "asc",
+                },
+                select: {
+                    id: true,
+                    name: true,
+                },
+            }),
+        ]);
 
     return (
         <div className="max-w-5xl">
@@ -26,6 +41,7 @@ export default async function NewChallanPage() {
             <form action={createChallan}>
                 <ChallanForm
                     parties={parties}
+                    itemCategories={itemCategories}
                 />
             </form>
 

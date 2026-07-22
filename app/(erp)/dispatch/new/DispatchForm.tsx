@@ -21,7 +21,9 @@ type TruckItem = {
     itemName: string;
     partyName: string;
     challanNumber: string;
-    weight: number;
+
+    inputWeight: number;
+    outputWeight: number;
 };
 
 type Props = {
@@ -43,7 +45,13 @@ export default function DispatchForm({
         useState<TruckItem[]>([]);
 
     const [weights, setWeights] = useState<
-        Record<number, string>
+        Record<
+            number,
+            {
+                inputWeight: string;
+                outputWeight: string;
+            }
+        >
     >({});
 
     function getRemainingWeight(
@@ -56,7 +64,7 @@ export default function DispatchForm({
             )
             .reduce(
                 (sum, truckItem) =>
-                    sum + truckItem.weight,
+                    sum + truckItem.inputWeight,
                 0
             );
 
@@ -66,24 +74,29 @@ export default function DispatchForm({
     }
 
     function addItem(item: AvailableItem) {
-        const enteredWeight = Number(
-            weights[item.id] || 0
+        const inputWeight = Number(
+            weights[item.id]?.inputWeight || 0
         );
 
-        if (enteredWeight <= 0) {
+        const outputWeight = Number(
+            weights[item.id]?.outputWeight || 0
+        );
+
+        if (inputWeight <= 0) {
             alert(
                 "Dispatch weight must be greater than 0."
             );
+            return;
+        }
+        if (outputWeight <= 0) {
+            alert("Output weight must be greater than 0.");
             return;
         }
 
         const remainingWeight =
             getRemainingWeight(item);
 
-        if (
-            enteredWeight >
-            remainingWeight
-        ) {
+        if (inputWeight > remainingWeight) {
             alert(
                 `Only ${remainingWeight} kg available.`
             );
@@ -102,10 +115,13 @@ export default function DispatchForm({
 
                 updated[existingIndex] = {
                     ...updated[existingIndex],
-                    weight:
-                        updated[
-                            existingIndex
-                        ].weight + enteredWeight,
+                    inputWeight:
+                        updated[existingIndex].inputWeight +
+                        inputWeight,
+
+                    outputWeight:
+                        updated[existingIndex].outputWeight +
+                        outputWeight,
                 };
 
                 return updated;
@@ -120,14 +136,18 @@ export default function DispatchForm({
                         item.challan.party.partyName,
                     challanNumber:
                         item.challan.challanNumber,
-                    weight: enteredWeight,
+                    inputWeight,
+                    outputWeight,
                 },
             ];
         });
 
         setWeights((previous) => ({
             ...previous,
-            [item.id]: "",
+            [item.id]: {
+                inputWeight: "",
+                outputWeight: "",
+            },
         }));
     }
 
@@ -212,8 +232,12 @@ export default function DispatchForm({
                                     Item
                                 </th>
 
-                                <th className="p-2 text-left">
-                                    Weight
+                                <th>
+                                    Input
+                                </th>
+
+                                <th>
+                                    Output
                                 </th>
 
                                 <th className="p-2 text-left">
@@ -240,8 +264,12 @@ export default function DispatchForm({
                                         {item.itemName}
                                     </td>
 
-                                    <td className="p-2">
-                                        {item.weight} kg
+                                    <td>
+                                        {item.inputWeight} kg
+                                    </td>
+
+                                    <td>
+                                        {item.outputWeight} kg
                                     </td>
 
                                     <td className="p-2">
@@ -286,8 +314,12 @@ export default function DispatchForm({
                                 Available
                             </th>
 
-                            <th className="p-2 text-left">
-                                Dispatch Weight
+                            <th>
+                                Input Weight
+                            </th>
+
+                            <th>
+                                Output Weight
                             </th>
 
                             <th className="p-2 text-left">
@@ -331,20 +363,37 @@ export default function DispatchForm({
                                     <input
                                         type="number"
                                         value={
-                                            weights[item.id] ||
-                                            ""
+                                            weights[item.id]?.inputWeight || ""
                                         }
                                         onChange={(e) =>
-                                            setWeights(
-                                                (
-                                                    previous
-                                                ) => ({
-                                                    ...previous,
-                                                    [item.id]:
-                                                        e.target
-                                                            .value,
-                                                })
-                                            )
+                                            setWeights((previous) => ({
+                                                ...previous,
+                                                [item.id]: {
+                                                    inputWeight: e.target.value,
+                                                    outputWeight:
+                                                        previous[item.id]
+                                                            ?.outputWeight || "",
+                                                },
+                                            }))
+                                        }
+                                        className="w-28 rounded border p-2"
+                                    />
+                                    <input
+                                        type="number"
+                                        value={
+                                            weights[item.id]?.outputWeight || ""
+                                        }
+                                        onChange={(e) =>
+                                            setWeights((previous) => ({
+                                                ...previous,
+                                                [item.id]: {
+                                                    inputWeight:
+                                                        previous[item.id]
+                                                            ?.inputWeight || "",
+                                                    outputWeight:
+                                                        e.target.value,
+                                                },
+                                            }))
                                         }
                                         className="w-28 rounded border p-2"
                                     />
@@ -375,8 +424,8 @@ export default function DispatchForm({
                             truckItems.map(
                                 (item) => ({
                                     id: item.id,
-                                    weight:
-                                        item.weight,
+                                    inputWeight: item.inputWeight,
+                                    outputWeight: item.outputWeight,
                                 })
                             )
                         );

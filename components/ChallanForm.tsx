@@ -2,230 +2,367 @@
 
 import { useState } from "react";
 
+const sizeOptions = [
+  "M8",
+  "M10",
+  "M12",
+  "M16",
+  "M20",
+  "M22",
+  "M24",
+  "M30",
+  "Other",
+];
+
 type ItemRow = {
-    itemName: string;
-    weight: string;
+  id?: number;
+  itemCategoryId: string;
+  size: string;
+  customSize: string;
+  itemName: string;
+  weight: string;
 };
 
 type PartyOption = {
-    id: number;
-    partyName: string;
+  id: number;
+  partyName: string;
+};
+
+type ItemCategoryOption = {
+  id: number;
+  name: string;
+};
+
+type InitialChallan = {
+  partyId: number;
+  challanNumber: string;
+  receivedDate: string;
+  vehicleNumber: string;
+  ewayNumber: string;
+  items: ItemRow[];
 };
 
 export default function ChallanForm({
-    parties,
+  parties,
+  itemCategories,
+  initialChallan,
+  submitLabel = "Save Challan",
 }: {
-    parties: PartyOption[];
+  parties: PartyOption[];
+  itemCategories: ItemCategoryOption[];
+  initialChallan?: InitialChallan;
+  submitLabel?: string;
 }) {
-    const [items, setItems] = useState<ItemRow[]>([
-        {
+  const [items, setItems] = useState<ItemRow[]>(
+    initialChallan?.items.length
+      ? initialChallan.items
+      : [
+          {
+            itemCategoryId: "",
+            size: "",
+            customSize: "",
             itemName: "",
             weight: "",
-        },
+          },
+        ]
+  );
+
+  const addItem = () => {
+    setItems([
+      ...items,
+      {
+        itemCategoryId: "",
+        size: "",
+        customSize: "",
+        itemName: "",
+        weight: "",
+      },
     ]);
+  };
 
-    const addItem = () => {
-        setItems([
-            ...items,
-            {
-                itemName: "",
-                weight: "",
-            },
-        ]);
-    };
+  const removeItem = (index: number) => {
+    if (items.length === 1) {
+      return;
+    }
 
-    const removeItem = (index: number) => {
-        setItems(
-            items.filter((_, i) => i !== index)
-        );
-    };
-
-    const updateItem = (
-        index: number,
-        field: keyof ItemRow,
-        value: string
-    ) => {
-        const updatedItems = [...items];
-
-        updatedItems[index][field] = value;
-
-        setItems(updatedItems);
-    };
-
-    const totalWeight = items.reduce(
-        (sum, item) =>
-            sum + (Number(item.weight) || 0),
-        0
+    setItems(
+      items.filter((_, i) => i !== index)
     );
+  };
 
-    return (
-        <div className="space-y-6">
+  const updateItem = (
+    index: number,
+    field: keyof ItemRow,
+    value: string
+  ) => {
+    const updatedItems = [...items];
 
-            <div>
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value,
+    };
 
-                <label className="block mb-1">
-                    Party
-                </label>
+    if (
+      field === "size" &&
+      value !== "Other"
+    ) {
+      updatedItems[index].customSize = "";
+    }
 
+    setItems(updatedItems);
+  };
+
+  const totalWeight = items.reduce(
+    (sum, item) =>
+      sum + (Number(item.weight) || 0),
+    0
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="mb-1 block">
+          Party
+        </label>
+
+        <select
+          name="partyId"
+          defaultValue={
+            initialChallan?.partyId ?? ""
+          }
+          required
+          className="w-full rounded border p-2"
+        >
+          <option value="">
+            Select Party
+          </option>
+
+          {parties.map((party) => (
+            <option
+              key={party.id}
+              value={party.id}
+            >
+              {party.partyName}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="mb-1 block">
+          Challan Number
+        </label>
+
+        <input
+          name="challanNumber"
+          defaultValue={
+            initialChallan?.challanNumber
+          }
+          required
+          className="w-full rounded border p-2"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block">
+          Received Date
+        </label>
+
+        <input
+          type="date"
+          name="receivedDate"
+          defaultValue={
+            initialChallan?.receivedDate ??
+            new Date().toISOString().split("T")[0]
+          }
+          required
+          className="w-full rounded border p-2"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block">
+          Vehicle Number
+        </label>
+
+        <input
+          name="vehicleNumber"
+          defaultValue={
+            initialChallan?.vehicleNumber
+          }
+          className="w-full rounded border p-2"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block">
+          E-Way Number
+        </label>
+
+        <input
+          name="ewayNumber"
+          defaultValue={
+            initialChallan?.ewayNumber
+          }
+          className="w-full rounded border p-2"
+        />
+      </div>
+
+      <div className="rounded border p-4">
+        <h2 className="mb-4 font-bold">
+          Challan Items
+        </h2>
+
+        <div className="space-y-3">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className="grid grid-cols-12 gap-2"
+            >
+              <select
+                name={`itemCategoryId-${index}`}
+                value={item.itemCategoryId}
+                onChange={(event) =>
+                  updateItem(
+                    index,
+                    "itemCategoryId",
+                    event.target.value
+                  )
+                }
+                required
+                className="col-span-2 rounded border p-2"
+              >
+                <option value="">
+                  Category
+                </option>
+
+                {itemCategories.map((category) => (
+                  <option
+                    key={category.id}
+                    value={category.id}
+                  >
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              <div className="col-span-2 space-y-2">
                 <select
-                    name="partyId"
-                    className="border p-2 w-full rounded"
+                  name={`size-${index}`}
+                  value={item.size}
+                  onChange={(event) =>
+                    updateItem(
+                      index,
+                      "size",
+                      event.target.value
+                    )
+                  }
+                  required
+                  className="w-full rounded border p-2"
                 >
+                  <option value="">
+                    Size
+                  </option>
 
-                    <option value="">
-                        Select Party
+                  {sizeOptions.map((size) => (
+                    <option
+                      key={size}
+                      value={size}
+                    >
+                      {size}
                     </option>
-
-                    {parties.map((party) => (
-                        <option
-                            key={party.id}
-                            value={party.id}
-                        >
-                            {party.partyName}
-                        </option>
-                    ))}
-
+                  ))}
                 </select>
 
-            </div>
-
-            <div>
-
-                <label className="block mb-1">
-                    Challan Number
-                </label>
-
-                <input
-                    name="challanNumber"
-                    className="border p-2 w-full rounded"
-                />
-
-            </div>
-            <div>
-
-                <label className="block mb-1">
-                    Received Date
-                </label>
-
-                <input
-                    type="date"
-                    name="receivedDate"
-                    defaultValue={
-                        new Date().toISOString().split("T")[0]
+                {item.size === "Other" && (
+                  <input
+                    name={`customSize-${index}`}
+                    placeholder="Custom Size"
+                    value={item.customSize}
+                    onChange={(event) =>
+                      updateItem(
+                        index,
+                        "customSize",
+                        event.target.value
+                      )
                     }
-                    className="border p-2 w-full rounded"
                     required
-                />
+                    className="w-full rounded border p-2"
+                  />
+                )}
+              </div>
 
+              <input
+                name={`itemName-${index}`}
+                placeholder="Item Name"
+                value={item.itemName}
+                onChange={(event) =>
+                  updateItem(
+                    index,
+                    "itemName",
+                    event.target.value
+                  )
+                }
+                required
+                className="col-span-4 rounded border p-2"
+              />
+
+              <input
+                name={`weight-${index}`}
+                placeholder="Received Weight"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={item.weight}
+                onChange={(event) =>
+                  updateItem(
+                    index,
+                    "weight",
+                    event.target.value
+                  )
+                }
+                required
+                className="col-span-2 rounded border p-2"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  removeItem(index)
+                }
+                className="col-span-2 rounded bg-red-500 text-white"
+              >
+                Remove
+              </button>
             </div>
-
-            <div>
-
-                <label className="block mb-1">
-                    Vehicle Number
-                </label>
-
-                <input
-                    name="vehicleNumber"
-                    className="border p-2 w-full rounded"
-                />
-
-            </div>
-
-            <div>
-
-                <label className="block mb-1">
-                    E-Way Number
-                </label>
-
-                <input
-                    name="ewayNumber"
-                    className="border p-2 w-full rounded"
-                />
-
-            </div>
-
-            <div className="border rounded p-4">
-
-                <h2 className="font-bold mb-4">
-                    Challan Items
-                </h2>
-
-                {items.map((item, index) => (
-                    <div
-                        key={index}
-                        className="grid grid-cols-12 gap-2 mb-2"
-                    >
-
-                        <input
-                            name={`itemName-${index}`}
-                            placeholder="Item Name"
-                            value={item.itemName}
-                            onChange={(e) =>
-                                updateItem(
-                                    index,
-                                    "itemName",
-                                    e.target.value
-                                )
-                            }
-                            className="col-span-7 border p-2 rounded"
-                        />
-
-                        <input
-                            name={`weight-${index}`}
-                            placeholder="Weight"
-                            type="number"
-                            value={item.weight}
-                            onChange={(e) =>
-                                updateItem(
-                                    index,
-                                    "weight",
-                                    e.target.value
-                                )
-                            }
-                            className="col-span-3 border p-2 rounded"
-                        />
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                removeItem(index)
-                            }
-                            className="col-span-2 bg-red-500 text-white rounded"
-                        >
-                            Remove
-                        </button>
-
-                    </div>
-                ))}
-
-                <button
-                    type="button"
-                    onClick={addItem}
-                    className="mt-3 bg-green-600 text-white px-4 py-2 rounded"
-                >
-                    + Add Item
-                </button>
-
-            </div>
-
-            <div className="text-xl font-bold">
-
-                Total Weight: {totalWeight} kg
-
-            </div>
-            <input
-                type="hidden"
-                name="items"
-                value={JSON.stringify(items)}
-            />
-            <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-                Save Challan
-            </button>
-
+          ))}
         </div>
-    );
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="mt-3 rounded bg-green-600 px-4 py-2 text-white"
+        >
+          + Add Item
+        </button>
+      </div>
+
+      <div className="text-xl font-bold">
+        Total Weight: {totalWeight} kg
+      </div>
+
+      <input
+        type="hidden"
+        name="items"
+        value={JSON.stringify(items)}
+      />
+
+      <button
+        type="submit"
+        className="rounded bg-blue-600 px-4 py-2 text-white"
+      >
+        {submitLabel}
+      </button>
+    </div>
+  );
 }

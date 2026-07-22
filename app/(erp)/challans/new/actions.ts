@@ -7,6 +7,9 @@ import { verifyToken } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 
 type ItemInput = {
+  itemCategoryId: string;
+  size: string;
+  customSize?: string;
   itemName: string;
   weight: string;
 };
@@ -36,15 +39,56 @@ export async function createChallan(
 
   const items =
     JSON.parse(itemsJson) as ItemInput[];
-  const validItems = items.filter(
-    (item) =>
-      item.itemName.trim() !== "" &&
-      Number(item.weight) > 0
+  const activeCategories =
+    await prisma.itemCategory.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+  const activeCategoryIds = new Set(
+    activeCategories.map(
+      (category) => category.id
+    )
   );
+  const validItems = items
+    .map((item) => {
+      const size =
+        item.size === "Other"
+          ? item.customSize?.trim()
+          : item.size?.trim();
+
+      return {
+        itemCategoryId: Number(
+          item.itemCategoryId
+        ),
+        size,
+        itemName: item.itemName.trim(),
+        receivedWeight: Number(
+          item.weight
+        ),
+      };
+    })
+    .filter(
+      (item) =>
+        item.itemCategoryId > 0 &&
+        activeCategoryIds.has(
+          item.itemCategoryId
+        ) &&
+        !!item.size &&
+        item.itemName !== "" &&
+        item.receivedWeight > 0
+    );
+
+  if (!partyId || validItems.length === 0) {
+    return;
+  }
 
   const totalWeight = validItems.reduce(
     (sum, item) =>
-      sum + (Number(item.weight) || 0),
+      sum + item.receivedWeight,
     0
   );
 
@@ -66,12 +110,13 @@ export async function createChallan(
   await prisma.challanItem.createMany({
     data: validItems.map((item) => ({
       itemName: item.itemName,
-      receivedWeight: Number(
-        item.weight
-      ),
-      currentWeight: Number(
-        item.weight
-      ),
+      itemCategoryId:
+        item.itemCategoryId,
+      size: item.size,
+      receivedWeight:
+        item.receivedWeight,
+      currentWeight:
+        item.receivedWeight,
       challanId: challan.id,
     })),
   });

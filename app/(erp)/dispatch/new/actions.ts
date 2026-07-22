@@ -7,9 +7,9 @@ import { logActivity } from "@/lib/activity";
 
 type TruckItem = {
     id: number;
-    weight: number;
+    inputWeight: number;
+    outputWeight: number;
 };
-
 export async function createDispatch(
     vehicleNumber: string,
     remarks: string,
@@ -43,9 +43,20 @@ export async function createDispatch(
             if (!challanItem) {
                 throw new Error("Material not found");
             }
+            if (item.inputWeight <= 0) {
+                throw new Error(
+                    "Input weight must be greater than zero."
+                );
+            }
+
+            if (item.outputWeight <= 0) {
+                throw new Error(
+                    "Output weight must be greater than zero."
+                );
+            }
 
             const remainingWeight =
-                challanItem.currentWeight - item.weight;
+                challanItem.currentWeight - item.inputWeight;
 
             if (remainingWeight < 0) {
                 throw new Error(
@@ -57,7 +68,18 @@ export async function createDispatch(
                 data: {
                     dispatchId: dispatch.id,
                     challanItemId: item.id,
-                    dispatchedWeight: item.weight,
+                    dispatchedWeight: item.outputWeight,
+
+                    actualOutputWeight: item.outputWeight,
+
+                    zincAddedWeight:
+                        item.outputWeight - item.inputWeight,
+
+                    zincPercentage:
+                        ((item.outputWeight -
+                            item.inputWeight) /
+                            item.inputWeight) *
+                        100,
                 },
             });
 

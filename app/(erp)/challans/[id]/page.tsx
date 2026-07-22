@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import StatusBadge from "@/components/ui/status-badge";
 
 export default async function ChallanDetailsPage({
   params,
@@ -15,6 +17,7 @@ export default async function ChallanDetailsPage({
       party: true,
       items: {
         include: {
+          itemCategory: true,
           dispatchItems: {
             include: {
               dispatch: true,
@@ -33,37 +36,61 @@ export default async function ChallanDetailsPage({
     );
   }
   const dispatchHistory =
-  challan.items.flatMap(
-    (item) =>
-      item.dispatchItems.map(
-        (dispatchItem) => ({
-          itemName: item.itemName,
+    challan.items.flatMap(
+      (item) =>
+        item.dispatchItems.map(
+          (dispatchItem) => ({
+            itemName: item.itemName,
 
-          dispatchedWeight:
-            dispatchItem.dispatchedWeight,
+            dispatchedWeight:
+              dispatchItem.dispatchedWeight,
 
-          vehicleNumber:
-            dispatchItem.dispatch
-              .vehicleNumber,
+            vehicleNumber:
+              dispatchItem.dispatch
+                .vehicleNumber,
 
-          dispatchDate:
-            dispatchItem.dispatch
-              .dispatchDate,
-        })
-      )
+            dispatchDate:
+              dispatchItem.dispatch
+                .dispatchDate,
+          })
+        )
+    );
+  const totalDispatched = challan.items.reduce(
+    (sum, item) =>
+      sum +
+      item.dispatchItems.reduce(
+        (dispatchSum, dispatchItem) =>
+          dispatchSum + dispatchItem.dispatchedWeight,
+        0
+      ),
+    0
+  );
+
+  const remainingWeight = challan.items.reduce(
+    (sum, item) => sum + item.currentWeight,
+    0
   );
   return (
     <div className="space-y-6">
 
-      <div>
+      <div className="flex items-center justify-between">
 
-        <h1 className="text-3xl font-bold">
-          Challan #{challan.challanNumber}
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold">
+            Challan #{challan.challanNumber}
+          </h1>
 
-        <p className="text-gray-500">
-          Material Receipt Details
-        </p>
+          <p className="text-gray-500">
+            Material Receipt Details
+          </p>
+        </div>
+
+        <Link
+          href={`/challans/${challan.id}/edit`}
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Edit Challan
+        </Link>
 
       </div>
 
@@ -112,11 +139,7 @@ export default async function ChallanDetailsPage({
           </p>
 
           <p className="text-3xl font-bold">
-            {challan.items.reduce(
-              (sum, item) =>
-                sum + item.currentWeight,
-              0
-            )} kg
+            {remainingWeight} kg
           </p>
         </div>
 
@@ -126,12 +149,7 @@ export default async function ChallanDetailsPage({
           </p>
 
           <p className="text-3xl font-bold">
-            {challan.receivedWeight -
-              challan.items.reduce(
-                (sum, item) =>
-                  sum + item.currentWeight,
-                0
-              )} kg
+            {totalDispatched} kg
           </p>
         </div>
 
@@ -150,6 +168,14 @@ export default async function ChallanDetailsPage({
               </th>
 
               <th className="text-left p-3">
+                Category
+              </th>
+
+              <th className="text-left p-3">
+                Size
+              </th>
+
+              <th className="text-left p-3">
                 Received Weight
               </th>
 
@@ -159,9 +185,6 @@ export default async function ChallanDetailsPage({
 
               <th className="text-left p-3">
                 Status
-              </th>
-              <th className="text-left p-3">
-                Dispatched
               </th>
 
             </tr>
@@ -181,6 +204,14 @@ export default async function ChallanDetailsPage({
                 </td>
 
                 <td className="p-3">
+                  {item.itemCategory?.name ?? "-"}
+                </td>
+
+                <td className="p-3">
+                  {item.size ?? "-"}
+                </td>
+
+                <td className="p-3">
                   {item.receivedWeight} kg
                 </td>
 
@@ -189,12 +220,7 @@ export default async function ChallanDetailsPage({
                 </td>
 
                 <td className="p-3">
-                  {item.status}
-                </td>
-                <td className="p-3">
-                  {item.receivedWeight -
-                    item.currentWeight}{" "}
-                  kg
+                  <StatusBadge status={item.status} />
                 </td>
 
               </tr>

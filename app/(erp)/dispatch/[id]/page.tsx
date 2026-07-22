@@ -80,7 +80,15 @@ export default async function DispatchDetailPage(
               </th>
 
               <th className="p-2 text-left">
-                Weight
+                Output Weight
+              </th>
+
+              <th className="p-2 text-left">
+                Zinc Added
+              </th>
+
+              <th className="p-2 text-left">
+                Zinc %
               </th>
             </tr>
           </thead>
@@ -116,10 +124,15 @@ export default async function DispatchDetailPage(
                   </td>
 
                   <td className="p-2">
-                    {
-                      item.dispatchedWeight
-                    }{" "}
-                    kg
+                    {item.actualOutputWeight} kg
+                  </td>
+
+                  <td className="p-2">
+                    {item.zincAddedWeight?.toFixed(2)} kg
+                  </td>
+
+                  <td className="p-2">
+                    {item.zincPercentage?.toFixed(2)} %
                   </td>
                 </tr>
               )

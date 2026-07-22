@@ -16,8 +16,7 @@ enum UserRole {
 
 enum ItemStatus {
   RECEIVED
-  STORED
-  IN_PRODUCTION
+  PARTIALLY_PRODUCED
   READY
   PARTIALLY_DISPATCHED
   COMPLETED
@@ -57,6 +56,7 @@ model Party {
   createdAt DateTime @default(now())
 
   challans Challan[]
+  updatedAt DateTime @updatedAt
 }
 
 model Challan {
@@ -80,6 +80,7 @@ model Challan {
   @@unique([partyId, challanNumber])
   @@index([partyId])
   @@index([receivedDate])
+  updatedAt DateTime @updatedAt
 }
 
 model ChallanItem {
@@ -88,9 +89,10 @@ model ChallanItem {
   itemName String
 
   receivedWeight Float
-  currentWeight  Float
+  pendingProductionWeight Float
+  readyWeight Float @default(0)
 
-  itemCategoryId Int
+  itemCategoryId Int?
   size           String?
 
   status ItemStatus @default(RECEIVED)
@@ -98,7 +100,7 @@ model ChallanItem {
   challanId Int
   challan   Challan @relation(fields: [challanId], references: [id])
 
-  itemCategory ItemCategory @relation(fields: [itemCategoryId], references: [id])
+  itemCategory ItemCategory? @relation(fields: [itemCategoryId], references: [id], onDelete: SetNull )
 
   dispatchItems   DispatchItem[]
   productionItems ProductionBatchItem[]
@@ -109,6 +111,9 @@ model ChallanItem {
   @@index([itemCategoryId])
   @@index([itemCategoryId, size])
   @@index([status])
+  @@index([readyWeight])
+  @@index([pendingProductionWeight])
+  updatedAt DateTime @updatedAt
 }
 
 model Dispatch {
@@ -124,20 +129,23 @@ model Dispatch {
   createdAt DateTime @default(now())
 
   @@index([dispatchDate])
+  updatedAt DateTime @updatedAt
 }
 
 model DispatchItem {
   id Int @id @default(autoincrement())
 
-  dispatchedWeight Float
+  inputWeight  Float
+  outputWeight Float
 
   dispatchId Int
-  dispatch   Dispatch @relation(fields: [dispatchId], references: [id])
+  dispatch Dispatch @relation(fields: [dispatchId], references: [id])
 
   challanItemId Int
-  challanItem   ChallanItem @relation(fields: [challanItemId], references: [id])
+  challanItem ChallanItem @relation(fields: [challanItemId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ActivityLog {
@@ -186,6 +194,7 @@ model Contractor {
 
   rates   ContractorRate[]
   batches ProductionBatch[]
+  updatedAt DateTime @updatedAt
 }
 
 model ContractorRate {
@@ -212,6 +221,7 @@ model ContractorRate {
   @@index([contractorId, itemCategoryId, size])
   @@index([contractorId, itemCategoryId, size, effectiveFrom])
   @@index([isActive])
+  updatedAt DateTime @updatedAt
 }
 
 model Furnace {
@@ -224,6 +234,7 @@ model Furnace {
   createdAt DateTime @default(now())
 
   batches ProductionBatch[]
+  updatedAt DateTime @updatedAt
 }
 
 model ProductionBatch {
@@ -250,6 +261,7 @@ model ProductionBatch {
   @@index([contractorId])
   @@index([furnaceId])
   @@index([processDate])
+  updatedAt DateTime @updatedAt
 }
 
 model ProductionBatchItem {
@@ -258,17 +270,18 @@ model ProductionBatchItem {
   productionBatchId Int
   challanItemId     Int
 
-  processedWeight  Float
-  outputWeight     Float
-  zincAddedWeight  Float
-  zincPercentage   Float
-  contractorRate   Float
-  contractorAmount Float
+  inputWeight  Float
+  
+  contractorRate   Float?
+  contractorAmount Float?
+
   remarks          String?
 
-  productionBatch ProductionBatch @relation(fields: [productionBatchId], references: [id])
+  // NEW
+  completedAt DateTime?
 
-  challanItem ChallanItem @relation(fields: [challanItemId], references: [id])
+  productionBatch ProductionBatch @relation(fields: [productionBatchId], references: [id])
+  challanItem      ChallanItem     @relation(fields: [challanItemId], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -276,6 +289,8 @@ model ProductionBatchItem {
   @@index([challanItemId])
   @@index([productionBatchId, challanItemId])
   @@index([createdAt])
+  @@index([completedAt])
+  updatedAt DateTime @updatedAt
 }
 
 model ItemCategory {
@@ -289,4 +304,5 @@ model ItemCategory {
 
   rates        ContractorRate[]
   challanItems ChallanItem[]
+  updatedAt DateTime @updatedAt
 }
