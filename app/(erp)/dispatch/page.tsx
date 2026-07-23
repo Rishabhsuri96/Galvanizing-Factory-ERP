@@ -60,7 +60,7 @@ export default async function DispatchPage() {
                         ) : (
                             dispatches.map((dispatch) => {
                                 const totalWeight = dispatch.items.reduce(
-                                    (sum, item) => sum + item.dispatchedWeight,
+                                    (sum, item) => sum + item.outputWeight,
                                     0
                                 );
 

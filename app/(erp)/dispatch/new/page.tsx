@@ -4,10 +4,7 @@ import DispatchForm from "./DispatchForm";
 export default async function NewDispatchPage() {
   const availableItems = await prisma.challanItem.findMany({
     where: {
-      status: {
-        in: ["READY", "PARTIALLY_DISPATCHED"],
-      },
-      currentWeight: {
+      readyWeight: {
         gt: 0,
       },
     },
@@ -29,11 +26,11 @@ export default async function NewDispatchPage() {
       <h1 className="text-3xl font-bold">
         New Dispatch
       </h1>
-<DispatchForm
+      <DispatchForm
         availableItems={availableItems}
       />
-      
-    
+
+
       {/* Available Material */}
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold">
@@ -80,7 +77,7 @@ export default async function NewDispatchPage() {
                 </td>
 
                 <td className="p-2">
-                  {item.currentWeight} kg
+                  {item.readyWeight} kg
                 </td>
               </tr>
             ))}
@@ -97,9 +94,9 @@ export default async function NewDispatchPage() {
             )}
           </tbody>
         </table>
-        
+
       </div>
-          
+
     </div>
   );
 }

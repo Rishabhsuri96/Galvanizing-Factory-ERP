@@ -7,7 +7,6 @@ import { requirePermission } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-
 export async function assignProductionItem(
   batchId: number,
   formData: FormData
@@ -15,16 +14,16 @@ export async function assignProductionItem(
   const user = await requirePermission("MANAGE_PRODUCTION");
 
   const challanItemId = Number(formData.get("challanItemId"));
-  const processedWeight = Number(formData.get("processedWeight"));
+  const inputWeight = Number(formData.get("processedWeight"));
 
   if (
-  !batchId ||
-  !challanItemId ||
-  !processedWeight ||
-  processedWeight <= 0
-) {
-  throw new Error("Please enter a valid weight.");
-}
+    !batchId ||
+    !challanItemId ||
+    !inputWeight ||
+    inputWeight <= 0
+  ) {
+    throw new Error("Please enter a valid weight.");
+  }
 
   const [batch, challanItem] = await Promise.all([
     prisma.productionBatch.findUnique({
@@ -46,77 +45,82 @@ export async function assignProductionItem(
   ]);
 
   if (!batch || !challanItem) {
-  throw new Error("Production batch or challan item not found.");
-}
+    throw new Error(
+      "Production batch or challan item not found."
+    );
+  }
 
-  // Current weight is already the available weight
-  const availableWeight = challanItem.currentWeight;
+  const availableWeight =
+    challanItem.pendingProductionWeight;
 
-  if (processedWeight > availableWeight) {
-  throw new Error(
-  `Only ${availableWeight} kg is available for production.`
-);
-}
-try{
-  await prisma.$transaction(async (tx) => {
-    const existingItem =
-      await tx.productionBatchItem.findFirst({
+  if (inputWeight > availableWeight) {
+    throw new Error(
+      `Only ${availableWeight} kg is available for production.`
+    );
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Only merge with an item that is NOT completed
+      const existingItem =
+        await tx.productionBatchItem.findFirst({
+          where: {
+            productionBatchId: batch.id,
+            challanItemId: challanItem.id,
+            completedAt: null,
+          },
+        });
+
+      if (existingItem) {
+        await tx.productionBatchItem.update({
+          where: {
+            id: existingItem.id,
+          },
+          data: {
+            inputWeight:
+              existingItem.inputWeight +
+              inputWeight,
+          },
+        });
+      } else {
+        await tx.productionBatchItem.create({
+          data: {
+            productionBatchId: batch.id,
+            challanItemId: challanItem.id,
+            inputWeight,
+          },
+        });
+      }
+
+      // Assignment only changes status.
+      // Inventory movement happens on completion.
+      await tx.challanItem.update({
         where: {
-          productionBatchId: batch.id,
-          challanItemId: challanItem.id,
-        },
-      });
-
-    if (existingItem) {
-      await tx.productionBatchItem.update({
-        where: {
-          id: existingItem.id,
+          id: challanItem.id,
         },
         data: {
-          processedWeight:
-            existingItem.processedWeight +
-            processedWeight,
+          status:
+            challanItem.status === ItemStatus.RECEIVED
+              ? ItemStatus.PARTIALLY_PRODUCED
+              : challanItem.status,
         },
       });
-    } else {
-      await tx.productionBatchItem.create({
-        data: {
-          productionBatchId: batch.id,
-          challanItemId: challanItem.id,
-          processedWeight,
-        },
-      });
-    }
-
-    await tx.challanItem.update({
-      where: {
-        id: challanItem.id,
-      },
-      data: {
-        currentWeight:
-          availableWeight - processedWeight,
-        status: ItemStatus.IN_PRODUCTION,
-      },
     });
-  });
 
-  await logActivity(
-    user.id,
-    "PRODUCTION_ITEM_ASSIGNED",
-    `Assigned ${processedWeight} kg of ${challanItem.itemName}${
-      challanItem.size ? ` ${challanItem.size}` : ""
-    } from Challan ${challanItem.challan.challanNumber} to Batch ${batch.batchNo}`
-  );
+    await logActivity(
+      user.id,
+      "PRODUCTION_ITEM_ASSIGNED",
+      `Assigned ${inputWeight} kg of ${challanItem.itemName}${
+        challanItem.size ? ` ${challanItem.size}` : ""
+      } from Challan ${challanItem.challan.challanNumber} to Batch ${batch.batchNo}`
+    );
 
-  revalidatePath(`/production/${batch.id}`);
-  revalidatePath(`/challans/${challanItem.challan.id}`);
+    revalidatePath(`/production/${batch.id}`);
+    revalidatePath(`/challans/${challanItem.challan.id}`);
 
-  redirect(`/production/${batch.id}`);
-}
-catch (error) {
-
-  console.error(error);
-
-  throw error;
-}
+    redirect(`/production/${batch.id}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }

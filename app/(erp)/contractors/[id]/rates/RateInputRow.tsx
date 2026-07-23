@@ -77,6 +77,8 @@ export default function RateInputRow({
       <input
         type="number"
         step="0.01"
+        min="0"
+        onWheel={(e) => e.currentTarget.blur()}
         name={`category-${categoryId}-rate`}
         required={needsRate}
         value={rateValue}

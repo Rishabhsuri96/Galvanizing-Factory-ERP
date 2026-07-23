@@ -43,14 +43,26 @@ export default async function PartyPage({
                 0
             );
 
-    const totalRemaining =
+    const totalPendingProduction =
         party.challans
             .flatMap((challan) => challan.items)
             .reduce(
                 (sum, item) =>
-                    sum + item.currentWeight,
+                    sum + item.pendingProductionWeight,
                 0
             );
+
+    const totalReady =
+        party.challans
+            .flatMap((challan) => challan.items)
+            .reduce(
+                (sum, item) =>
+                    sum + item.readyWeight,
+                0
+            );
+
+    const totalRemaining =
+        totalPendingProduction + totalReady;
 
     const totalDispatched =
         totalReceived - totalRemaining;
@@ -159,7 +171,8 @@ export default async function PartyPage({
                                     challan.items.reduce(
                                         (sum, item) =>
                                             sum +
-                                            item.currentWeight,
+                                            item.pendingProductionWeight +
+                                            item.readyWeight,
                                         0
                                     );
 

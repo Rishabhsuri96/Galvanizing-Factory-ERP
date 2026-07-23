@@ -23,7 +23,12 @@ export default async function ProductionBatchPage({
         items: {
           include: {
             challanItem: {
-              include: {
+              select: {
+                id: true,
+                itemName: true,
+                size: true,
+                pendingProductionWeight: true,
+                readyWeight: true,
                 itemCategory: true,
                 challan: {
                   include: {
@@ -178,7 +183,13 @@ export default async function ProductionBatchPage({
                 <th className="p-2 text-left">
                   Assigned Weight
                 </th>
+                <th className="p-2 text-left">
+                  Pending
+                </th>
 
+                <th className="p-2 text-left">
+                  Ready
+                </th>
                 <th className="p-2 text-left">
                   Status
                 </th>
@@ -215,7 +226,14 @@ export default async function ProductionBatchPage({
                   </td>
 
                   <td className="p-2">
-                    {item.processedWeight} kg
+                    {item.inputWeight} kg
+                  </td>
+                  <td className="p-2">
+                    {item.challanItem.pendingProductionWeight} kg
+                  </td>
+
+                  <td className="p-2">
+                    {item.challanItem.readyWeight} kg
                   </td>
 
                   <td className="p-2">
@@ -243,6 +261,108 @@ export default async function ProductionBatchPage({
             </tbody>
           </table>
         )}
+      </div>
+      {/* Production Summary */}
+      <div className="rounded-lg border bg-white p-6">
+        <h2 className="mb-4 text-xl font-semibold">
+          Production Summary
+        </h2>
+
+        {(() => {
+          const totalAssigned = batch.items.reduce(
+            (sum, item) => sum + item.inputWeight,
+            0
+          );
+
+          const completedItems = batch.items.filter(
+            (item) => item.completedAt
+          ).length;
+
+          const pendingItems =
+            batch.items.length - completedItems;
+
+          const completedWeight = batch.items
+            .filter((item) => item.completedAt)
+            .reduce(
+              (sum, item) => sum + item.inputWeight,
+              0
+            );
+
+          const pendingWeight =
+            totalAssigned - completedWeight;
+
+          const completionPercentage =
+            totalAssigned === 0
+              ? 0
+              : (
+                (completedWeight / totalAssigned) *
+                100
+              ).toFixed(1);
+
+          return (
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Total Assigned
+                </p>
+
+                <p className="mt-2 text-2xl font-bold">
+                  {totalAssigned} kg
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Completed Weight
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-green-600">
+                  {completedWeight} kg
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Remaining Weight
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-orange-600">
+                  {pendingWeight} kg
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Completed Items
+                </p>
+
+                <p className="mt-2 text-2xl font-bold">
+                  {completedItems}
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Pending Items
+                </p>
+
+                <p className="mt-2 text-2xl font-bold">
+                  {pendingItems}
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm text-gray-500">
+                  Completion
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-blue-600">
+                  {completionPercentage}%
+                </p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

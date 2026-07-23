@@ -157,7 +157,7 @@ export async function updateChallan(
         size: item.size,
         receivedWeight:
           item.receivedWeight,
-        currentWeight:
+        pendingProductionWeight:
           item.receivedWeight,
       })),
     });

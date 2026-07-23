@@ -8,6 +8,226 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id           Int              @id @default(autoincrement())
+  name         String
+  username     String           @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime         @default(now())
+  isActive     Boolean          @default(true)
+  activities   ActivityLog[]
+  permissions  UserPermission[]
+}
+
+model Party {
+  id            Int       @id @default(autoincrement())
+  partyName     String
+  gstNumber     String?
+  address       String?
+  phone         String?
+  email         String?
+  contactPerson String?
+  createdAt     DateTime  @default(now())
+  isActive      Boolean   @default(true)
+  updatedAt     DateTime  @updatedAt
+  challans      Challan[]
+}
+
+model Challan {
+  id             Int           @id @default(autoincrement())
+  challanNumber  String
+  vehicleNumber  String?
+  ewayNumber     String?
+  receivedWeight Float
+  receivedDate   DateTime      @default(now())
+  partyId        Int
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  party          Party         @relation(fields: [partyId], references: [id])
+  items          ChallanItem[]
+
+  @@unique([partyId, challanNumber])
+  @@index([partyId])
+  @@index([receivedDate])
+}
+
+model ChallanItem {
+  id                      Int                   @id @default(autoincrement())
+  itemName                String
+  receivedWeight          Float
+  status                  ItemStatus            @default(RECEIVED)
+  challanId               Int
+  createdAt               DateTime              @default(now())
+  itemCategoryId          Int?
+  size                    String?
+  pendingProductionWeight Float
+  readyWeight             Float                 @default(0)
+  updatedAt               DateTime              @updatedAt
+  challan                 Challan               @relation(fields: [challanId], references: [id])
+  itemCategory            ItemCategory?         @relation(fields: [itemCategoryId], references: [id])
+  dispatchItems           DispatchItem[]
+  productionItems         ProductionBatchItem[]
+
+  @@index([challanId])
+  @@index([itemCategoryId])
+  @@index([itemCategoryId, size])
+  @@index([status])
+  @@index([readyWeight])
+  @@index([pendingProductionWeight])
+}
+
+model Dispatch {
+  id            Int            @id @default(autoincrement())
+  vehicleNumber String?
+  remarks       String?
+  dispatchDate  DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         DispatchItem[]
+
+  @@index([dispatchDate])
+}
+
+model DispatchItem {
+  id            Int         @id @default(autoincrement())
+  dispatchId    Int
+  challanItemId Int
+  createdAt     DateTime    @default(now())
+  inputWeight   Float
+  outputWeight  Float
+  updatedAt     DateTime    @updatedAt
+  challanItem   ChallanItem @relation(fields: [challanItemId], references: [id])
+  dispatch      Dispatch    @relation(fields: [dispatchId], references: [id])
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  createdAt DateTime @default(now())
+  userId    Int
+  details   String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Permission {
+  id    Int              @id @default(autoincrement())
+  code  String           @unique
+  name  String
+  users UserPermission[]
+}
+
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@unique([userId, permissionId])
+}
+
+model Contractor {
+  id        Int               @id @default(autoincrement())
+  name      String
+  phone     String?
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  address   String?
+  remarks   String?
+  updatedAt DateTime          @updatedAt
+  rates     ContractorRate[]
+  batches   ProductionBatch[]
+}
+
+model ContractorRate {
+  id             Int          @id @default(autoincrement())
+  contractorId   Int
+  ratePerKg      Float
+  effectiveFrom  DateTime
+  createdAt      DateTime     @default(now())
+  itemCategoryId Int
+  isActive       Boolean      @default(true)
+  size           String?
+  updatedAt      DateTime     @updatedAt
+  contractor     Contractor   @relation(fields: [contractorId], references: [id])
+  itemCategory   ItemCategory @relation(fields: [itemCategoryId], references: [id])
+
+  @@unique([contractorId, itemCategoryId, size, effectiveFrom])
+  @@index([contractorId])
+  @@index([itemCategoryId])
+  @@index([contractorId, itemCategoryId, size])
+  @@index([contractorId, itemCategoryId, size, effectiveFrom])
+  @@index([isActive])
+}
+
+model Furnace {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  batches   ProductionBatch[]
+}
+
+model ProductionBatch {
+  id           Int                   @id @default(autoincrement())
+  batchNo      String                @unique
+  processDate  DateTime              @default(now())
+  contractorId Int
+  furnaceId    Int
+  remarks      String?
+  createdAt    DateTime              @default(now())
+  shift        Shift
+  updatedAt    DateTime              @updatedAt
+  contractor   Contractor            @relation(fields: [contractorId], references: [id])
+  furnace      Furnace               @relation(fields: [furnaceId], references: [id])
+  items        ProductionBatchItem[]
+
+  @@index([contractorId])
+  @@index([furnaceId])
+  @@index([processDate])
+}
+
+model ProductionBatchItem {
+  id                Int             @id @default(autoincrement())
+  productionBatchId Int
+  challanItemId     Int
+  createdAt         DateTime        @default(now())
+  contractorAmount  Float?
+  contractorRate    Float?
+  remarks           String?
+  completedAt       DateTime?
+  inputWeight       Float
+  updatedAt         DateTime        @updatedAt
+  challanItem       ChallanItem     @relation(fields: [challanItemId], references: [id])
+  productionBatch   ProductionBatch @relation(fields: [productionBatchId], references: [id])
+
+  @@index([productionBatchId])
+  @@index([challanItemId])
+  @@index([productionBatchId, challanItemId])
+  @@index([createdAt])
+  @@index([completedAt])
+}
+
+model ItemCategory {
+  id           Int              @id @default(autoincrement())
+  name         String           @unique
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  challanItems ChallanItem[]
+  rates        ContractorRate[]
+}
+
+model Size {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum UserRole {
   OWNER
   MANAGER
@@ -25,284 +245,4 @@ enum ItemStatus {
 enum Shift {
   DAY
   NIGHT
-}
-
-model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  username     String   @unique
-  passwordHash String
-  role         UserRole
-  isActive     Boolean  @default(true)
-
-  createdAt DateTime @default(now())
-
-  permissions UserPermission[]
-  activities  ActivityLog[]
-}
-
-model Party {
-  id Int @id @default(autoincrement())
-
-  partyName     String
-  gstNumber     String?
-  address       String?
-  phone         String?
-  email         String?
-  contactPerson String?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  challans Challan[]
-  updatedAt DateTime @updatedAt
-}
-
-model Challan {
-  id Int @id @default(autoincrement())
-
-  challanNumber String
-  vehicleNumber String?
-  ewayNumber    String?
-
-  receivedWeight Float
-
-  receivedDate DateTime @default(now())
-
-  partyId Int
-  party   Party @relation(fields: [partyId], references: [id])
-
-  items ChallanItem[]
-
-  createdAt DateTime @default(now())
-
-  @@unique([partyId, challanNumber])
-  @@index([partyId])
-  @@index([receivedDate])
-  updatedAt DateTime @updatedAt
-}
-
-model ChallanItem {
-  id Int @id @default(autoincrement())
-
-  itemName String
-
-  receivedWeight Float
-  pendingProductionWeight Float
-  readyWeight Float @default(0)
-
-  itemCategoryId Int?
-  size           String?
-
-  status ItemStatus @default(RECEIVED)
-
-  challanId Int
-  challan   Challan @relation(fields: [challanId], references: [id])
-
-  itemCategory ItemCategory? @relation(fields: [itemCategoryId], references: [id], onDelete: SetNull )
-
-  dispatchItems   DispatchItem[]
-  productionItems ProductionBatchItem[]
-
-  createdAt DateTime @default(now())
-
-  @@index([challanId])
-  @@index([itemCategoryId])
-  @@index([itemCategoryId, size])
-  @@index([status])
-  @@index([readyWeight])
-  @@index([pendingProductionWeight])
-  updatedAt DateTime @updatedAt
-}
-
-model Dispatch {
-  id Int @id @default(autoincrement())
-
-  vehicleNumber String?
-  remarks       String?
-
-  dispatchDate DateTime @default(now())
-
-  items DispatchItem[]
-
-  createdAt DateTime @default(now())
-
-  @@index([dispatchDate])
-  updatedAt DateTime @updatedAt
-}
-
-model DispatchItem {
-  id Int @id @default(autoincrement())
-
-  inputWeight  Float
-  outputWeight Float
-
-  dispatchId Int
-  dispatch Dispatch @relation(fields: [dispatchId], references: [id])
-
-  challanItemId Int
-  challanItem ChallanItem @relation(fields: [challanItemId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ActivityLog {
-  id Int @id @default(autoincrement())
-
-  action  String
-  details String?
-
-  createdAt DateTime @default(now())
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-}
-
-model Permission {
-  id   Int    @id @default(autoincrement())
-  code String @unique
-  name String
-
-  users UserPermission[]
-}
-
-model UserPermission {
-  id Int @id @default(autoincrement())
-
-  userId       Int
-  permissionId Int
-
-  user       User       @relation(fields: [userId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
-
-  @@unique([userId, permissionId])
-}
-
-model Contractor {
-  id Int @id @default(autoincrement())
-
-  name    String
-  phone   String?
-  address String?
-  remarks String?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  rates   ContractorRate[]
-  batches ProductionBatch[]
-  updatedAt DateTime @updatedAt
-}
-
-model ContractorRate {
-  id Int @id @default(autoincrement())
-
-  contractorId   Int
-  itemCategoryId Int
-  size           String?
-
-  ratePerKg Float
-
-  effectiveFrom DateTime
-
-  contractor Contractor @relation(fields: [contractorId], references: [id])
-
-  itemCategory ItemCategory @relation(fields: [itemCategoryId], references: [id])
-
-  createdAt DateTime @default(now())
-  isActive  Boolean  @default(true)
-
-  @@unique([contractorId, itemCategoryId, size, effectiveFrom])
-  @@index([contractorId])
-  @@index([itemCategoryId])
-  @@index([contractorId, itemCategoryId, size])
-  @@index([contractorId, itemCategoryId, size, effectiveFrom])
-  @@index([isActive])
-  updatedAt DateTime @updatedAt
-}
-
-model Furnace {
-  id Int @id @default(autoincrement())
-
-  name String @unique
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  batches ProductionBatch[]
-  updatedAt DateTime @updatedAt
-}
-
-model ProductionBatch {
-  id Int @id @default(autoincrement())
-
-  batchNo String @unique
-
-  processDate DateTime @default(now())
-
-  contractorId Int
-  furnaceId    Int
-  shift        Shift
-
-  remarks String?
-
-  contractor Contractor @relation(fields: [contractorId], references: [id])
-
-  furnace Furnace @relation(fields: [furnaceId], references: [id])
-
-  items ProductionBatchItem[]
-
-  createdAt DateTime @default(now())
-
-  @@index([contractorId])
-  @@index([furnaceId])
-  @@index([processDate])
-  updatedAt DateTime @updatedAt
-}
-
-model ProductionBatchItem {
-  id Int @id @default(autoincrement())
-
-  productionBatchId Int
-  challanItemId     Int
-
-  inputWeight  Float
-  
-  contractorRate   Float?
-  contractorAmount Float?
-
-  remarks          String?
-
-  // NEW
-  completedAt DateTime?
-
-  productionBatch ProductionBatch @relation(fields: [productionBatchId], references: [id])
-  challanItem      ChallanItem     @relation(fields: [challanItemId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([productionBatchId])
-  @@index([challanItemId])
-  @@index([productionBatchId, challanItemId])
-  @@index([createdAt])
-  @@index([completedAt])
-  updatedAt DateTime @updatedAt
-}
-
-model ItemCategory {
-  id Int @id @default(autoincrement())
-
-  name String @unique
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  rates        ContractorRate[]
-  challanItems ChallanItem[]
-  updatedAt DateTime @updatedAt
 }

@@ -55,31 +55,21 @@ export async function createDispatch(
                 );
             }
 
-            const remainingWeight =
-                challanItem.currentWeight - item.inputWeight;
-
-            if (remainingWeight < 0) {
+            if (item.inputWeight > challanItem.readyWeight) {
                 throw new Error(
-                    `Insufficient weight available for ${challanItem.itemName}`
+                    `Only ${challanItem.readyWeight} kg is ready for dispatch for ${challanItem.itemName}.`
                 );
             }
+
+            const remainingReadyWeight =
+                challanItem.readyWeight - item.inputWeight;
 
             await tx.dispatchItem.create({
                 data: {
                     dispatchId: dispatch.id,
                     challanItemId: item.id,
-                    dispatchedWeight: item.outputWeight,
-
-                    actualOutputWeight: item.outputWeight,
-
-                    zincAddedWeight:
-                        item.outputWeight - item.inputWeight,
-
-                    zincPercentage:
-                        ((item.outputWeight -
-                            item.inputWeight) /
-                            item.inputWeight) *
-                        100,
+                    inputWeight: item.inputWeight,
+                    outputWeight: item.outputWeight,
                 },
             });
 
@@ -88,9 +78,9 @@ export async function createDispatch(
                     id: item.id,
                 },
                 data: {
-                    currentWeight: remainingWeight,
+                    readyWeight: remainingReadyWeight,
                     status:
-                        remainingWeight <= 0
+                        remainingReadyWeight <= 0
                             ? "COMPLETED"
                             : "PARTIALLY_DISPATCHED",
                 },

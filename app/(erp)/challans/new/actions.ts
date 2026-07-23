@@ -110,13 +110,18 @@ export async function createChallan(
   await prisma.challanItem.createMany({
     data: validItems.map((item) => ({
       itemName: item.itemName,
-      itemCategoryId:
-        item.itemCategoryId,
+      itemCategoryId: item.itemCategoryId,
       size: item.size,
-      receivedWeight:
+
+      receivedWeight: item.receivedWeight,
+
+      pendingProductionWeight:
         item.receivedWeight,
-      currentWeight:
-        item.receivedWeight,
+
+      readyWeight: 0,
+
+      status: "RECEIVED",
+
       challanId: challan.id,
     })),
   });

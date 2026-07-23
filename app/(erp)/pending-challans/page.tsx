@@ -5,7 +5,7 @@ export default async function PendingChallansPage() {
         where: {
             items: {
                 some: {
-                    currentWeight: {
+                    pendingProductionWeight: {
                         gt: 0,
                     },
                 },
@@ -81,7 +81,7 @@ export default async function PendingChallansPage() {
                                 challan.items.reduce(
                                     (sum, item) =>
                                         sum +
-                                        item.currentWeight,
+                                        item.pendingProductionWeight,
                                     0
                                 );
 

@@ -71,13 +71,12 @@ export default async function AddProductionItemPage({
       : {};
 
   const itemWhere: Prisma.ChallanItemWhereInput = {
-    currentWeight: {
+    pendingProductionWeight: {
       gt: 0,
     },
     status: {
       not: ItemStatus.COMPLETED,
     },
-    ...searchFilter,
   };
 
   const [items, selectedItem] =
@@ -100,7 +99,7 @@ export default async function AddProductionItemPage({
         ? prisma.challanItem.findFirst({
           where: {
             id: selectedItemId,
-            currentWeight: {
+            pendingProductionWeight: {
               gt: 0,
             },
             status: {
@@ -116,7 +115,7 @@ export default async function AddProductionItemPage({
             },
             productionItems: {
               select: {
-                processedWeight: true,
+                inputWeight: true,
               },
             },
           },
@@ -143,7 +142,7 @@ export default async function AddProductionItemPage({
   const availableItems = items
     .map((item) => ({
       ...item,
-      availableWeight: item.currentWeight,
+      availableWeight: item.pendingProductionWeight,
     }))
     .filter((item) => item.availableWeight > 0);
   return (

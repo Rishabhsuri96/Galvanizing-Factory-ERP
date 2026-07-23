@@ -7,7 +7,7 @@ import { createDispatch } from "./actions";
 type AvailableItem = {
     id: number;
     itemName: string;
-    currentWeight: number;
+    readyWeight: number;
     challan: {
         challanNumber: string;
         party: {
@@ -69,7 +69,7 @@ export default function DispatchForm({
             );
 
         return (
-            item.currentWeight - alreadyAdded
+            item.readyWeight - alreadyAdded
         );
     }
 
@@ -362,6 +362,8 @@ export default function DispatchForm({
                                 <td className="p-2">
                                     <input
                                         type="number"
+                                        min="0"
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         value={
                                             weights[item.id]?.inputWeight || ""
                                         }
@@ -380,6 +382,8 @@ export default function DispatchForm({
                                     />
                                     <input
                                         type="number"
+                                        min="0"
+                                        onWheel={(e) => e.currentTarget.blur()}
                                         value={
                                             weights[item.id]?.outputWeight || ""
                                         }

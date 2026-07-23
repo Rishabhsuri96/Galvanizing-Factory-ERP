@@ -3,7 +3,7 @@ import SubmitButton from "./SubmitButton";
 type SelectedItem = {
   id: number;
   itemName: string;
-  currentWeight: number;
+  pendingProductionWeight: number;
   size: string | null;
   itemCategory: {
     name: string;
@@ -80,7 +80,7 @@ export default function AddProductionItemForm({
           </p>
 
           <p className="font-medium">
-            {selectedItem.currentWeight} kg
+            {selectedItem.pendingProductionWeight} kg
           </p>
         </div>
       </div>
@@ -94,13 +94,14 @@ export default function AddProductionItemForm({
           type="number"
           name="processedWeight"
           min="0.01"
-          max={selectedItem.currentWeight}
+          onWheel={(e) => e.currentTarget.blur()}
+          max={selectedItem.pendingProductionWeight}
           step="0.01"
           required
           className="w-full rounded border p-2"
         />
         <p className="mt-1 text-sm text-gray-500">
-          Enter a value up to {selectedItem.currentWeight} kg.
+          Enter a value up to {selectedItem.pendingProductionWeight} kg.
         </p>
       </div>
 

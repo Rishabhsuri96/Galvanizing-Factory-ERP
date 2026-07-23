@@ -43,7 +43,7 @@ export default async function ChallanDetailsPage({
             itemName: item.itemName,
 
             dispatchedWeight:
-              dispatchItem.dispatchedWeight,
+              dispatchItem.outputWeight,
 
             vehicleNumber:
               dispatchItem.dispatch
@@ -60,14 +60,14 @@ export default async function ChallanDetailsPage({
       sum +
       item.dispatchItems.reduce(
         (dispatchSum, dispatchItem) =>
-          dispatchSum + dispatchItem.dispatchedWeight,
+          dispatchSum + dispatchItem.outputWeight,
         0
       ),
     0
   );
 
   const remainingWeight = challan.items.reduce(
-    (sum, item) => sum + item.currentWeight,
+    (sum, item) => sum + item.pendingProductionWeight,
     0
   );
   return (
@@ -121,7 +121,7 @@ export default async function ChallanDetailsPage({
         </div>
 
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
 
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">
@@ -135,14 +135,25 @@ export default async function ChallanDetailsPage({
 
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">
-            Remaining
+            Pending Production
           </p>
 
           <p className="text-3xl font-bold">
             {remainingWeight} kg
           </p>
         </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">
+            Ready for Dispatch
+          </p>
 
+          <p className="text-3xl font-bold">
+            {challan.items.reduce(
+              (sum, item) => sum + item.readyWeight,
+              0
+            )} kg
+          </p>
+        </div>
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">
             Dispatched
@@ -179,8 +190,11 @@ export default async function ChallanDetailsPage({
                 Received Weight
               </th>
 
+              <p className="text-sm text-gray-500">
+                Pending Production
+              </p>
               <th className="text-left p-3">
-                Current Weight
+                Ready Weight
               </th>
 
               <th className="text-left p-3">
@@ -216,7 +230,10 @@ export default async function ChallanDetailsPage({
                 </td>
 
                 <td className="p-3">
-                  {item.currentWeight} kg
+                  {item.pendingProductionWeight} kg
+                </td>
+                <td className="p-3">
+                  {item.readyWeight} kg
                 </td>
 
                 <td className="p-3">

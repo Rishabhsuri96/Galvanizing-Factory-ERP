@@ -313,6 +313,7 @@ export default function ChallanForm({
                 type="number"
                 min="0.01"
                 step="0.01"
+                onWheel={(e) => e.currentTarget.blur()}
                 value={item.weight}
                 onChange={(event) =>
                   updateItem(
