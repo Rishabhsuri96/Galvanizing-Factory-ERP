@@ -2,51 +2,29 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 
-export default async function SizesPage({
-    searchParams,
-}: {
-    searchParams: Promise<{
-        search?: string;
-    }>;
-}) {
+export default async function ContractorRatesPage() {
     await requirePermission("MANAGE_PRODUCTION");
-    const { search = "" } = await searchParams;
 
-    const searchText = search.trim();
-    const sizes = await prisma.size.findMany({
-        where: searchText
-            ? {
-                OR: [
-                    {
-                        name: {
-                            contains: searchText,
-                            mode: "insensitive",
-                        },
-                    },
-                    {
-                        itemCategory: {
-                            name: {
-                                contains: searchText,
-                                mode: "insensitive",
-                            },
-                        },
-                    },
-                ],
-            }
-            : undefined,
-
+    const rates = await prisma.contractorRate.findMany({
         include: {
+            contractor: true,
             itemCategory: true,
+            size: true, // ← Add this
         },
-
         orderBy: [
+            {
+                contractor: {
+                    name: "asc",
+                },
+            },
             {
                 itemCategory: {
                     name: "asc",
                 },
             },
+
             {
-                name: "asc",
+                effectiveFrom: "desc",
             },
         ],
     });
@@ -56,65 +34,44 @@ export default async function SizesPage({
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">
-                        Sizes
+                        Contractor Rates
                     </h1>
 
                     <p className="text-gray-500">
-                        Manage sizes for each item category.
+                        Manage contractor galvanizing rates.
                     </p>
                 </div>
 
                 <Link
-                    href="/sizes/new"
+                    href="/contractor-rates/new"
                     className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                 >
-                    + Add Size
+                    + Add Rate
                 </Link>
             </div>
-            <form
-                method="GET"
-                className="rounded-lg border bg-white p-6"
-            >
-                <label className="mb-1 block font-medium">
-                    Search
-                </label>
 
-                <div className="flex gap-3">
-                    <input
-                        type="text"
-                        name="search"
-                        defaultValue={searchText}
-                        placeholder="Search by category or size..."
-                        className="flex-1 rounded border px-3 py-2"
-                    />
-
-                    <button
-                        type="submit"
-                        className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                    >
-                        Search
-                    </button>
-
-                    {searchText && (
-                        <Link
-                            href="/sizes"
-                            className="rounded border px-4 py-2 hover:bg-gray-100"
-                        >
-                            Clear
-                        </Link>
-                    )}
-                </div>
-            </form>
             <div className="overflow-hidden rounded-lg border bg-white">
                 <table className="w-full">
                     <thead className="bg-gray-100">
                         <tr>
+                            <th className="p-3 text-left">
+                                Contractor
+                            </th>
+
                             <th className="p-3 text-left">
                                 Category
                             </th>
 
                             <th className="p-3 text-left">
                                 Size
+                            </th>
+
+                            <th className="p-3 text-right">
+                                Rate / Kg
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Effective From
                             </th>
 
                             <th className="p-3 text-left">
@@ -128,33 +85,47 @@ export default async function SizesPage({
                     </thead>
 
                     <tbody>
-                        {sizes.length === 0 ? (
+                        {rates.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={4}
+                                    colSpan={7}
                                     className="p-6 text-center text-gray-500"
                                 >
-                                    {searchText
-                                        ? "No matching sizes found."
-                                        : "No sizes found."}
+                                    No contractor rates found.
                                 </td>
                             </tr>
                         ) : (
-                            sizes.map((size) => (
+                            rates.map((rate) => (
                                 <tr
-                                    key={size.id}
+                                    key={rate.id}
                                     className="border-t"
                                 >
-                                    <td className="p-3">
-                                        {size.itemCategory.name}
-                                    </td>
-
                                     <td className="p-3 font-medium">
-                                        {size.name}
+                                        {rate.contractor.name}
                                     </td>
 
                                     <td className="p-3">
-                                        {size.isActive ? (
+                                        {rate.itemCategory.name}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {rate.size?.name ?? "-"}
+                                    </td>
+
+                                    <td className="p-3 text-right">
+                                        ₹ {rate.ratePerKg.toFixed(2)}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {rate.effectiveFrom.toLocaleDateString("en-IN", {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric",
+                                        })}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {rate.isActive ? (
                                             <span className="rounded bg-green-100 px-2 py-1 text-sm text-green-700">
                                                 Active
                                             </span>
@@ -167,7 +138,7 @@ export default async function SizesPage({
 
                                     <td className="p-3 text-right">
                                         <Link
-                                            href={`/sizes/${size.id}/edit`}
+                                            href={`/contractor-rates/${rate.id}/edit`}
                                             className="text-blue-600 hover:underline"
                                         >
                                             Edit

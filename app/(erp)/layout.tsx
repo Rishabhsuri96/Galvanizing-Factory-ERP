@@ -149,10 +149,20 @@ export default async function RootLayout({
                                             </Link>
                                         )}
 
-                                        {permissions.includes("MANAGE_ITEM_CATEGORIES") && (
-                                            <Link href="/item-categories" className={sidebarLink}>
-                                                Item Categories
-                                            </Link>
+                                        {permissions.includes("MANAGE_PRODUCTION") && (
+                                            <>
+                                                <Link href="/item-categories" className={sidebarLink}>
+                                                    Item Categories
+                                                </Link>
+
+                                                <Link href="/sizes" className={sidebarLink}>
+                                                    Sizes
+                                                </Link>
+
+                                                <Link href="/contractor-rates" className={sidebarLink}>
+                                                    Contractor Rates
+                                                </Link>
+                                            </>
                                         )}
 
                                     </div>
