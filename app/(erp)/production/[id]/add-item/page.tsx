@@ -83,8 +83,10 @@ export default async function AddProductionItemPage({
     await Promise.all([
       prisma.challanItem.findMany({
         where: itemWhere,
+        
         include: {
           itemCategory: true,
+          size: true,
           challan: {
             include: {
               party: true,
@@ -108,6 +110,7 @@ export default async function AddProductionItemPage({
           },
           include: {
             itemCategory: true,
+            size: true,
             challan: {
               include: {
                 party: true,
@@ -282,7 +285,7 @@ export default async function AddProductionItemPage({
                   </td>
 
                   <td className="p-2">
-                    {item.size ?? "-"}
+                    {item.size?.name ?? "-"}
                   </td>
 
                   <td className="p-2">

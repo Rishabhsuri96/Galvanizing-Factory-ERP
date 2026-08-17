@@ -5,7 +5,9 @@ type SelectedItem = {
   id: number;
   itemName: string;
   pendingProductionWeight: number;
-  size: string | null;
+  size: {
+    name: string;
+  } | null;
   itemCategory: {
     name: string;
   } | null;
@@ -70,7 +72,7 @@ export default function AddProductionItemForm({
           <p className="font-medium">
             {selectedItem.itemName}
             {selectedItem.size
-              ? ` ${selectedItem.size}`
+              ? ` ${selectedItem.size.name}`
               : ""}
           </p>
         </div>

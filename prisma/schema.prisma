@@ -205,9 +205,12 @@ model ProductionBatchItem {
   challanItemId     Int
 
   // Production
+  // Production
   inputWeight       Float
   outputWeight      Float?
-
+  zincAddedWeight   Float?
+  zincPercentage    Float?
+  
   // Contractor
   contractorRate    Float
   contractorAmount  Float

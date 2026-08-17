@@ -10,7 +10,9 @@ type Props = {
 
     challanItem: {
       itemName: string;
-      size: string | null;
+      size: {
+        name: string;
+      } | null;
 
       itemCategory: {
         name: string;
@@ -75,7 +77,7 @@ export default function CompleteProductionForm({
           <p className="font-medium">
             {productionItem.challanItem.itemName}
             {productionItem.challanItem.size
-              ? ` ${productionItem.challanItem.size}`
+              ? ` ${productionItem.challanItem.size.name}`
               : ""}
           </p>
         </div>
