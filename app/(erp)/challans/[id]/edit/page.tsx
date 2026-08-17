@@ -3,16 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { updateChallan } from "./actions";
 
-const standardSizes = new Set([
-  "M8",
-  "M10",
-  "M12",
-  "M16",
-  "M20",
-  "M22",
-  "M24",
-  "M30",
-]);
 
 function toDateInputValue(date: Date) {
   return date.toISOString().split("T")[0];
@@ -26,7 +16,7 @@ export default async function EditChallanPage({
   const { id } = await params;
   const challanId = Number(id);
 
-  const [challan, parties, itemCategories] =
+  const [challan, parties, itemCategories, sizes] =
     await Promise.all([
       prisma.challan.findUnique({
         where: {
@@ -35,6 +25,7 @@ export default async function EditChallanPage({
         include: {
           items: {
             include: {
+              size: true,   // ✅ IMPORTANT
               dispatchItems: true,
               productionItems: true,
             },
@@ -63,6 +54,15 @@ export default async function EditChallanPage({
         select: {
           id: true,
           name: true,
+        },
+      }),
+      prisma.size.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          itemCategoryId: true,
         },
       }),
     ]);
@@ -95,44 +95,21 @@ export default async function EditChallanPage({
           <ChallanForm
             parties={parties}
             itemCategories={itemCategories}
+            sizes={sizes}
             submitLabel="Update Challan"
             initialChallan={{
               partyId: challan.partyId,
-              challanNumber:
-                challan.challanNumber,
-              receivedDate: toDateInputValue(
-                challan.receivedDate
-              ),
-              vehicleNumber:
-                challan.vehicleNumber ?? "",
-              ewayNumber:
-                challan.ewayNumber ?? "",
-              items: challan.items.map((item) => {
-                const itemSize =
-                  item.size ?? "";
-                const isStandardSize =
-                  standardSizes.has(itemSize);
-
-                return {
-                  id: item.id,
-                  itemCategoryId: String(
-                    item.itemCategoryId ?? ""
-                  ),
-                  size: isStandardSize
-                    ? itemSize
-                    : itemSize
-                      ? "Other"
-                      : "",
-                  customSize:
-                    !isStandardSize && itemSize
-                      ? itemSize
-                      : "",
-                  itemName: item.itemName,
-                  weight: String(
-                    item.receivedWeight
-                  ),
-                };
-              }),
+              challanNumber: challan.challanNumber,
+              receivedDate: toDateInputValue(challan.receivedDate),
+              vehicleNumber: challan.vehicleNumber ?? "",
+              ewayNumber: challan.ewayNumber ?? "",
+              items: challan.items.map((item) => ({
+                id: item.id,
+                itemCategoryId: String(item.itemCategoryId),
+                sizeId: String(item.sizeId),   // ✅ correct
+                itemName: item.itemName,
+                weight: String(item.receivedWeight),
+              })),
             }}
           />
         </form>

@@ -40,8 +40,9 @@ export async function assignProductionItem(
       },
       include: {
         challan: true,
+        size: true,            
       },
-    }),
+    })
   ]);
 
   if (!batch || !challanItem) {
@@ -58,7 +59,26 @@ export async function assignProductionItem(
       `Only ${availableWeight} kg is available for production.`
     );
   }
+  const rate = await prisma.contractorRate.findFirst({
+    where: {
+      contractorId: batch.id
+        ? (await prisma.productionBatch.findUnique({
+          where: { id: batch.id },
+          select: { contractorId: true },
+        }))?.contractorId
+        : undefined,
+      itemCategoryId: challanItem.itemCategoryId,
+      sizeId: challanItem.sizeId ?? null,
+      isActive: true,
+    },
+    orderBy: {
+      effectiveFrom: "desc",
+    },
+  });
 
+  if (!rate) {
+    throw new Error("No contractor rate found for this item");
+  }
   try {
     await prisma.$transaction(async (tx) => {
       // Only merge with an item that is NOT completed
@@ -78,8 +98,9 @@ export async function assignProductionItem(
           },
           data: {
             inputWeight:
-              existingItem.inputWeight +
-              inputWeight,
+              existingItem.inputWeight + inputWeight,
+            contractorRate: rate.ratePerKg,
+            rateSourceId: rate.id,
           },
         });
       } else {
@@ -88,6 +109,9 @@ export async function assignProductionItem(
             productionBatchId: batch.id,
             challanItemId: challanItem.id,
             inputWeight,
+            contractorRate: rate.ratePerKg,
+            rateSourceId: rate.id,
+            contractorAmount: 0, // calculated on completion
           },
         });
       }
@@ -110,8 +134,7 @@ export async function assignProductionItem(
     await logActivity(
       user.id,
       "PRODUCTION_ITEM_ASSIGNED",
-      `Assigned ${inputWeight} kg of ${challanItem.itemName}${
-        challanItem.size ? ` ${challanItem.size}` : ""
+      `Assigned ${inputWeight} kg of ${challanItem.itemName}${challanItem.size?.name ? ` ${challanItem.size.name}` : ""
       } from Challan ${challanItem.challan.challanNumber} to Batch ${batch.batchNo}`
     );
 

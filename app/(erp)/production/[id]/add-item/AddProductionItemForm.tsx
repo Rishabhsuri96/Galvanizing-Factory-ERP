@@ -1,3 +1,4 @@
+"use client";
 import { assignProductionItem } from "./actions";
 import SubmitButton from "./SubmitButton";
 type SelectedItem = {

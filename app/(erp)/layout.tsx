@@ -162,6 +162,13 @@ export default async function RootLayout({
                                                 <Link href="/contractor-rates" className={sidebarLink}>
                                                     Contractor Rates
                                                 </Link>
+
+                                                <Link href="/zinc-inventory" className={sidebarLink}>
+                                                    Zinc Inventory
+                                                </Link>
+                                                <Link href="/chemical-inventory" className={sidebarLink}>
+                                                    Chemical Inventory
+                                                </Link>
                                             </>
                                         )}
 

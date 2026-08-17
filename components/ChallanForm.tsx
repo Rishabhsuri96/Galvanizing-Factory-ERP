@@ -2,23 +2,9 @@
 
 import { useState } from "react";
 
-const sizeOptions = [
-  "M8",
-  "M10",
-  "M12",
-  "M16",
-  "M20",
-  "M22",
-  "M24",
-  "M30",
-  "Other",
-];
-
 type ItemRow = {
-  id?: number;
   itemCategoryId: string;
-  size: string;
-  customSize: string;
+  sizeId: string;
   itemName: string;
   weight: string;
 };
@@ -33,6 +19,12 @@ type ItemCategoryOption = {
   name: string;
 };
 
+type SizeOption = {
+  id: number;
+  name: string;
+  itemCategoryId: number;
+};
+
 type InitialChallan = {
   partyId: number;
   challanNumber: string;
@@ -45,22 +37,23 @@ type InitialChallan = {
 export default function ChallanForm({
   parties,
   itemCategories,
+  sizes,
   initialChallan,
   submitLabel = "Save Challan",
 }: {
   parties: PartyOption[];
   itemCategories: ItemCategoryOption[];
+  sizes: SizeOption[];
   initialChallan?: InitialChallan;
   submitLabel?: string;
 }) {
   const [items, setItems] = useState<ItemRow[]>(
-    initialChallan?.items.length
+    initialChallan?.items?.length
       ? initialChallan.items
       : [
           {
             itemCategoryId: "",
-            size: "",
-            customSize: "",
+            sizeId: "",
             itemName: "",
             weight: "",
           },
@@ -72,8 +65,7 @@ export default function ChallanForm({
       ...items,
       {
         itemCategoryId: "",
-        size: "",
-        customSize: "",
+        sizeId: "",
         itemName: "",
         weight: "",
       },
@@ -81,13 +73,9 @@ export default function ChallanForm({
   };
 
   const removeItem = (index: number) => {
-    if (items.length === 1) {
-      return;
-    }
+    if (items.length === 1) return;
 
-    setItems(
-      items.filter((_, i) => i !== index)
-    );
+    setItems(items.filter((_, i) => i !== index));
   };
 
   const updateItem = (
@@ -95,79 +83,61 @@ export default function ChallanForm({
     field: keyof ItemRow,
     value: string
   ) => {
-    const updatedItems = [...items];
+    const updated = [...items];
 
-    updatedItems[index] = {
-      ...updatedItems[index],
+    updated[index] = {
+      ...updated[index],
       [field]: value,
     };
 
-    if (
-      field === "size" &&
-      value !== "Other"
-    ) {
-      updatedItems[index].customSize = "";
+    // 🔥 reset size when category changes
+    if (field === "itemCategoryId") {
+      updated[index].sizeId = "";
     }
 
-    setItems(updatedItems);
+    setItems(updated);
   };
 
   const totalWeight = items.reduce(
-    (sum, item) =>
-      sum + (Number(item.weight) || 0),
+    (sum, item) => sum + (Number(item.weight) || 0),
     0
   );
 
   return (
     <div className="space-y-6">
-      <div>
-        <label className="mb-1 block">
-          Party
-        </label>
 
+      {/* PARTY */}
+      <div>
+        <label className="mb-1 block">Party</label>
         <select
           name="partyId"
-          defaultValue={
-            initialChallan?.partyId ?? ""
-          }
+          defaultValue={initialChallan?.partyId ?? ""}
           required
           className="w-full rounded border p-2"
         >
-          <option value="">
-            Select Party
-          </option>
-
+          <option value="">Select Party</option>
           {parties.map((party) => (
-            <option
-              key={party.id}
-              value={party.id}
-            >
+            <option key={party.id} value={party.id}>
               {party.partyName}
             </option>
           ))}
         </select>
       </div>
 
+      {/* CHALLAN NUMBER */}
       <div>
-        <label className="mb-1 block">
-          Challan Number
-        </label>
-
+        <label className="mb-1 block">Challan Number</label>
         <input
           name="challanNumber"
-          defaultValue={
-            initialChallan?.challanNumber
-          }
+          defaultValue={initialChallan?.challanNumber}
           required
           className="w-full rounded border p-2"
         />
       </div>
 
+      {/* DATE */}
       <div>
-        <label className="mb-1 block">
-          Received Date
-        </label>
-
+        <label className="mb-1 block">Received Date</label>
         <input
           type="date"
           name="receivedDate"
@@ -180,163 +150,130 @@ export default function ChallanForm({
         />
       </div>
 
+      {/* VEHICLE */}
       <div>
-        <label className="mb-1 block">
-          Vehicle Number
-        </label>
-
+        <label className="mb-1 block">Vehicle Number</label>
         <input
           name="vehicleNumber"
-          defaultValue={
-            initialChallan?.vehicleNumber
-          }
+          defaultValue={initialChallan?.vehicleNumber}
           className="w-full rounded border p-2"
         />
       </div>
 
+      {/* EWAY */}
       <div>
-        <label className="mb-1 block">
-          E-Way Number
-        </label>
-
+        <label className="mb-1 block">E-Way Number</label>
         <input
           name="ewayNumber"
-          defaultValue={
-            initialChallan?.ewayNumber
-          }
+          defaultValue={initialChallan?.ewayNumber}
           className="w-full rounded border p-2"
         />
       </div>
 
+      {/* ITEMS */}
       <div className="rounded border p-4">
-        <h2 className="mb-4 font-bold">
-          Challan Items
-        </h2>
+        <h2 className="mb-4 font-bold">Challan Items</h2>
 
         <div className="space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-12 gap-2"
-            >
-              <select
-                name={`itemCategoryId-${index}`}
-                value={item.itemCategoryId}
-                onChange={(event) =>
-                  updateItem(
-                    index,
-                    "itemCategoryId",
-                    event.target.value
-                  )
-                }
-                required
-                className="col-span-2 rounded border p-2"
+          {items.map((item, index) => {
+            const filteredSizes = sizes.filter(
+              (s) =>
+                s.itemCategoryId ===
+                Number(item.itemCategoryId)
+            );
+
+            return (
+              <div
+                key={index}
+                className="grid grid-cols-12 gap-2"
               >
-                <option value="">
-                  Category
-                </option>
-
-                {itemCategories.map((category) => (
-                  <option
-                    key={category.id}
-                    value={category.id}
-                  >
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className="col-span-2 space-y-2">
+                {/* CATEGORY */}
                 <select
-                  name={`size-${index}`}
-                  value={item.size}
-                  onChange={(event) =>
+                  value={item.itemCategoryId}
+                  onChange={(e) =>
                     updateItem(
                       index,
-                      "size",
-                      event.target.value
+                      "itemCategoryId",
+                      e.target.value
                     )
                   }
                   required
-                  className="w-full rounded border p-2"
+                  className="col-span-2 rounded border p-2"
                 >
-                  <option value="">
-                    Size
-                  </option>
-
-                  {sizeOptions.map((size) => (
-                    <option
-                      key={size}
-                      value={size}
-                    >
-                      {size}
+                  <option value="">Category</option>
+                  {itemCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
 
-                {item.size === "Other" && (
-                  <input
-                    name={`customSize-${index}`}
-                    placeholder="Custom Size"
-                    value={item.customSize}
-                    onChange={(event) =>
-                      updateItem(
-                        index,
-                        "customSize",
-                        event.target.value
-                      )
-                    }
-                    required
-                    className="w-full rounded border p-2"
-                  />
-                )}
+                {/* SIZE */}
+                <select
+                  value={item.sizeId}
+                  onChange={(e) =>
+                    updateItem(
+                      index,
+                      "sizeId",
+                      e.target.value
+                    )
+                  }
+                  required
+                  className="col-span-2 rounded border p-2"
+                >
+                  <option value="">Size</option>
+
+                  {filteredSizes.map((size) => (
+                    <option key={size.id} value={size.id}>
+                      {size.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* ITEM NAME */}
+                <input
+                  placeholder="Item Name"
+                  value={item.itemName}
+                  onChange={(e) =>
+                    updateItem(
+                      index,
+                      "itemName",
+                      e.target.value
+                    )
+                  }
+                  required
+                  className="col-span-4 rounded border p-2"
+                />
+
+                {/* WEIGHT */}
+                <input
+                  type="number"
+                  placeholder="Weight"
+                  min="0.01"
+                  step="0.01"
+                  value={item.weight}
+                  onChange={(e) =>
+                    updateItem(
+                      index,
+                      "weight",
+                      e.target.value
+                    )
+                  }
+                  required
+                  className="col-span-2 rounded border p-2"
+                />
+
+                {/* REMOVE */}
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="col-span-2 rounded bg-red-500 text-white"
+                >
+                  Remove
+                </button>
               </div>
-
-              <input
-                name={`itemName-${index}`}
-                placeholder="Item Name"
-                value={item.itemName}
-                onChange={(event) =>
-                  updateItem(
-                    index,
-                    "itemName",
-                    event.target.value
-                  )
-                }
-                required
-                className="col-span-4 rounded border p-2"
-              />
-
-              <input
-                name={`weight-${index}`}
-                placeholder="Received Weight"
-                type="number"
-                min="0.01"
-                step="0.01"
-                onWheel={(e) => e.currentTarget.blur()}
-                value={item.weight}
-                onChange={(event) =>
-                  updateItem(
-                    index,
-                    "weight",
-                    event.target.value
-                  )
-                }
-                required
-                className="col-span-2 rounded border p-2"
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  removeItem(index)
-                }
-                className="col-span-2 rounded bg-red-500 text-white"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <button
@@ -348,16 +285,19 @@ export default function ChallanForm({
         </button>
       </div>
 
+      {/* TOTAL */}
       <div className="text-xl font-bold">
         Total Weight: {totalWeight} kg
       </div>
 
+      {/* HIDDEN JSON */}
       <input
         type="hidden"
         name="items"
         value={JSON.stringify(items)}
       />
 
+      {/* SUBMIT */}
       <button
         type="submit"
         className="rounded bg-blue-600 px-4 py-2 text-white"

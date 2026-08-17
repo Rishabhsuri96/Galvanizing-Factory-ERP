@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import CompleteButton from "./CompleteButton";
+import { completeProductionItem } from "./actions";
+
 export default async function ProductionBatchPage({
   params,
 }: {
@@ -181,7 +182,14 @@ export default async function ProductionBatchPage({
                 </th>
 
                 <th className="p-2 text-left">
-                  Assigned Weight
+                  Input Weight
+                </th>
+                <th className="p-2 text-left">
+                  Output Weight
+                </th>
+                
+                <th className="p-2 text-left">
+                  Contractor Amount
                 </th>
                 <th className="p-2 text-left">
                   Pending
@@ -222,12 +230,27 @@ export default async function ProductionBatchPage({
                   </td>
 
                   <td className="p-2">
-                    {item.challanItem.size ?? "-"}
+                    {item.challanItem.size?.name ?? "-"}
                   </td>
 
                   <td className="p-2">
                     {item.inputWeight} kg
                   </td>
+
+                  <td className="p-2">
+                    {item.outputWeight
+                      ? `${item.outputWeight.toFixed(2)} kg`
+                      : "-"}
+                  </td>
+
+                
+
+                  <td className="p-2">
+                    {item.contractorAmount
+                      ? `₹ ${item.contractorAmount.toFixed(2)}`
+                      : "-"}
+                  </td>
+
                   <td className="p-2">
                     {item.challanItem.pendingProductionWeight} kg
                   </td>
@@ -235,7 +258,6 @@ export default async function ProductionBatchPage({
                   <td className="p-2">
                     {item.challanItem.readyWeight} kg
                   </td>
-
                   <td className="p-2">
                     {item.completedAt ? (
                       <span className="rounded bg-green-100 px-2 py-1 text-sm text-green-700">
@@ -253,7 +275,16 @@ export default async function ProductionBatchPage({
                         —
                       </span>
                     ) : (
-                      <CompleteButton productionItemId={item.id} />
+                      <form action={completeProductionItem}>
+                        <input type="hidden" name="productionItemId" value={item.id} />
+
+                        <button
+                          type="submit"
+                          className="rounded bg-green-600 px-3 py-1 text-white"
+                        >
+                          Complete
+                        </button>
+                      </form>
                     )}
                   </td>
                 </tr>
@@ -263,14 +294,27 @@ export default async function ProductionBatchPage({
         )}
       </div>
       {/* Production Summary */}
+      {/* Production Summary */}
       <div className="rounded-lg border bg-white p-6">
         <h2 className="mb-4 text-xl font-semibold">
           Production Summary
         </h2>
 
         {(() => {
-          const totalAssigned = batch.items.reduce(
+          const totalInput = batch.items.reduce(
             (sum, item) => sum + item.inputWeight,
+            0
+          );
+
+          const totalOutput = batch.items.reduce(
+            (sum, item) => sum + (item.outputWeight ?? 0),
+            0
+          );
+
+          
+
+          const totalContractorCost = batch.items.reduce(
+            (sum, item) => sum + (item.contractorAmount ?? 0),
             0
           );
 
@@ -281,53 +325,37 @@ export default async function ProductionBatchPage({
           const pendingItems =
             batch.items.length - completedItems;
 
-          const completedWeight = batch.items
-            .filter((item) => item.completedAt)
-            .reduce(
-              (sum, item) => sum + item.inputWeight,
-              0
-            );
-
-          const pendingWeight =
-            totalAssigned - completedWeight;
-
-          const completionPercentage =
-            totalAssigned === 0
-              ? 0
-              : (
-                (completedWeight / totalAssigned) *
-                100
-              ).toFixed(1);
-
           return (
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-gray-500">
-                  Total Assigned
+                  Total Input
                 </p>
 
                 <p className="mt-2 text-2xl font-bold">
-                  {totalAssigned} kg
+                  {totalInput.toFixed(2)} kg
                 </p>
               </div>
 
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-gray-500">
-                  Completed Weight
+                  Total Output
                 </p>
 
                 <p className="mt-2 text-2xl font-bold text-green-600">
-                  {completedWeight} kg
+                  {totalOutput.toFixed(2)} kg
                 </p>
               </div>
 
+              
+
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-gray-500">
-                  Remaining Weight
+                  Contractor Cost
                 </p>
 
-                <p className="mt-2 text-2xl font-bold text-orange-600">
-                  {pendingWeight} kg
+                <p className="mt-2 text-2xl font-bold text-purple-600">
+                  ₹ {totalContractorCost.toFixed(2)}
                 </p>
               </div>
 
@@ -346,18 +374,8 @@ export default async function ProductionBatchPage({
                   Pending Items
                 </p>
 
-                <p className="mt-2 text-2xl font-bold">
+                <p className="mt-2 text-2xl font-bold text-orange-600">
                   {pendingItems}
-                </p>
-              </div>
-
-              <div className="rounded-lg border p-4">
-                <p className="text-sm text-gray-500">
-                  Completion
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-blue-600">
-                  {completionPercentage}%
                 </p>
               </div>
             </div>

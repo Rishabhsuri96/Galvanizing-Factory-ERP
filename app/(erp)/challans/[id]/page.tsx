@@ -18,6 +18,7 @@ export default async function ChallanDetailsPage({
       items: {
         include: {
           itemCategory: true,
+          size: true,   // ✅ ADD THIS
           dispatchItems: {
             include: {
               dispatch: true,
@@ -134,9 +135,9 @@ export default async function ChallanDetailsPage({
         </div>
 
         <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">
+          <th className="text-left p-3">
             Pending Production
-          </p>
+          </th>
 
           <p className="text-3xl font-bold">
             {remainingWeight} kg
@@ -222,7 +223,7 @@ export default async function ChallanDetailsPage({
                 </td>
 
                 <td className="p-3">
-                  {item.size ?? "-"}
+                  {item.size?.name ?? "-"}
                 </td>
 
                 <td className="p-3">

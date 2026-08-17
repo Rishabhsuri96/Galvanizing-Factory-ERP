@@ -33,60 +33,52 @@ export default function RateInputRow({
   const needsRate =
     selectedSize.length > 0;
 
-  return (
-    <div className="grid grid-cols-3 items-center gap-6">
-      <label className="font-medium">
-        {categoryName}
-      </label>
+ return (
+  <div className="grid grid-cols-3 gap-4 items-center">
 
-      <div className="space-y-2">
-        <select
-          name={`category-${categoryId}-size`}
-          required={needsSize}
-          value={selectedSize}
-          onChange={(event) =>
-            setSelectedSize(event.target.value)
-          }
-          className="w-full rounded border p-2"
-        >
-          <option value="">
-            Select size
-          </option>
-
-          {sizeOptions.map((size) => (
-            <option
-              key={size}
-              value={size}
-            >
-              {size}
-            </option>
-          ))}
-        </select>
-
-        {selectedSize === "Other" && (
-          <input
-            type="text"
-            name={`category-${categoryId}-custom-size`}
-            required={needsSize}
-            placeholder="Enter size"
-            className="w-full rounded border p-2"
-          />
-        )}
-      </div>
-
-      <input
-        type="number"
-        step="0.01"
-        min="0"
-        onWheel={(e) => e.currentTarget.blur()}
-        name={`category-${categoryId}-rate`}
-        required={needsRate}
-        value={rateValue}
-        onChange={(event) =>
-          setRateValue(event.target.value)
-        }
-        className="rounded border p-2"
-      />
+    <div className="font-medium">
+      {categoryName}
     </div>
-  );
+
+    <div className="space-y-2">
+      <select
+        name={`category-${categoryId}-size`}
+        required={needsSize}
+        value={selectedSize}
+        onChange={(e) => setSelectedSize(e.target.value)}
+        className="w-full rounded border p-2"
+      >
+        <option value="">Select size</option>
+
+        {sizeOptions.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
+        ))}
+      </select>
+
+      {selectedSize === "Other" && (
+        <input
+          type="text"
+          name={`category-${categoryId}-custom-size`}
+          required={needsSize}
+          placeholder="Enter size"
+          className="w-full rounded border p-2"
+        />
+      )}
+    </div>
+
+    <input
+      type="number"
+      step="0.01"
+      min="0"
+      name={`category-${categoryId}-rate`}
+      required={needsRate}
+      value={rateValue}
+      onChange={(e) => setRateValue(e.target.value)}
+      className="rounded border p-2"
+    />
+
+  </div>
+);
 }

@@ -11,12 +11,15 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@google-cloud/vision": "^5.3.7",
     "@prisma/client": "^6.15.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
-    "next": "16.2.9",
+    "next": "^16.3.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "tesseract.js": "^7.0.0",
+    "tesseract.js-core": "^6.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,13 +1,22 @@
 "use client";
 
-import { createContractor } from "./actions";
+type ContractorFormProps = {
+  submitLabel: string;
+  initialData?: {
+    name: string;
+    phone: string;
+    address: string;
+    remarks: string;
+  };
+};
 
-export default function ContractorForm() {
+export default function ContractorForm({
+  submitLabel,
+  initialData,
+}: ContractorFormProps) {
   return (
-    <form action={createContractor} className="space-y-6">
-
+    <>
       <div className="rounded-lg border bg-white p-6">
-
         <div className="grid grid-cols-2 gap-6">
 
           <div>
@@ -18,6 +27,7 @@ export default function ContractorForm() {
             <input
               name="name"
               required
+              defaultValue={initialData?.name ?? ""}
               className="w-full rounded border p-2"
             />
           </div>
@@ -29,6 +39,7 @@ export default function ContractorForm() {
 
             <input
               name="phone"
+              defaultValue={initialData?.phone ?? ""}
               className="w-full rounded border p-2"
             />
           </div>
@@ -41,6 +52,7 @@ export default function ContractorForm() {
             <textarea
               name="address"
               rows={3}
+              defaultValue={initialData?.address ?? ""}
               className="w-full rounded border p-2"
             />
           </div>
@@ -53,25 +65,22 @@ export default function ContractorForm() {
             <textarea
               name="remarks"
               rows={3}
+              defaultValue={initialData?.remarks ?? ""}
               className="w-full rounded border p-2"
             />
           </div>
 
         </div>
-
       </div>
 
       <div className="flex justify-end gap-3">
-
         <button
           type="submit"
           className="rounded bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
         >
-          Save Contractor
+          {submitLabel}
         </button>
-
       </div>
-
-    </form>
+    </>
   );
 }

@@ -20,6 +20,7 @@ export default async function ContractorDetailsPage({
         },
         include: {
           itemCategory: true,
+          size: true,
         },
         orderBy: [
           {
@@ -28,8 +29,10 @@ export default async function ContractorDetailsPage({
             },
           },
           {
-            size: "asc",
-          },
+            size: {
+              name: "asc",
+            },
+          }
         ],
       },
       batches: {
@@ -194,7 +197,7 @@ export default async function ContractorDetailsPage({
                   </td>
 
                   <td className="p-2">
-                    {rate.size ?? "-"}
+                    {rate.size?.name ?? "-"}
                   </td>
 
                   <td className="p-2">

@@ -8,87 +8,48 @@ import { logActivity } from "@/lib/activity";
 
 type ItemInput = {
   itemCategoryId: string;
-  size: string;
-  customSize?: string;
+  sizeId: string;   // ✅ FIXED
   itemName: string;
   weight: string;
 };
 
-export async function createChallan(
-  formData: FormData
-) {
-  const partyId = Number(
-    formData.get("partyId")
-  );
+export async function createChallan(formData: FormData) {
+  const partyId = Number(formData.get("partyId"));
+  const challanNumber = formData.get("challanNumber") as string;
+  const vehicleNumber = formData.get("vehicleNumber") as string;
+  const ewayNumber = formData.get("ewayNumber") as string;
+  const receivedDate = formData.get("receivedDate") as string;
 
-  const challanNumber =
-    formData.get("challanNumber") as string;
+  const itemsJson = formData.get("items") as string;
+  const items = JSON.parse(itemsJson) as ItemInput[];
 
-  const vehicleNumber =
-    formData.get("vehicleNumber") as string;
-
-  const ewayNumber =
-    formData.get("ewayNumber") as string;
-
-  const receivedDate =
-    formData.get("receivedDate") as string;
-
-  const itemsJson =
-    formData.get("items") as string;
-
-
-  const items =
-    JSON.parse(itemsJson) as ItemInput[];
-  const activeCategories =
-    await prisma.itemCategory.findMany({
-      where: {
-        isActive: true,
-      },
-      select: {
-        id: true,
-      },
-    });
-  const activeCategoryIds = new Set(
-    activeCategories.map(
-      (category) => category.id
-    )
-  );
   const validItems = items
-    .map((item) => {
-      const size =
-        item.size === "Other"
-          ? item.customSize?.trim()
-          : item.size?.trim();
-
-      return {
-        itemCategoryId: Number(
-          item.itemCategoryId
-        ),
-        size,
-        itemName: item.itemName.trim(),
-        receivedWeight: Number(
-          item.weight
-        ),
-      };
-    })
+    .map((item) => ({
+      itemCategoryId: Number(item.itemCategoryId),
+      sizeId: Number(item.sizeId),   // ✅ DIRECT
+      itemName: item.itemName.trim(),
+      receivedWeight: Number(item.weight),
+    }))
     .filter(
       (item) =>
         item.itemCategoryId > 0 &&
-        activeCategoryIds.has(
-          item.itemCategoryId
-        ) &&
-        !!item.size &&
+        item.sizeId > 0 &&
         item.itemName !== "" &&
         item.receivedWeight > 0
     );
 
   if (!partyId || validItems.length === 0) {
-    return;
+    console.log("❌ VALIDATION FAILED", {
+      partyId,
+      items,
+      validItems,
+    });
+
+    throw new Error("Validation failed");
   }
 
   const totalWeight = validItems.reduce(
-    (sum, item) =>
-      sum + item.receivedWeight,
+    (sum, item) => sum + item.receivedWeight,
     0
   );
 
@@ -96,13 +57,9 @@ export async function createChallan(
     data: {
       partyId,
       challanNumber,
-      vehicleNumber:
-        vehicleNumber || null,
-      ewayNumber:
-        ewayNumber || null,
-      receivedDate: new Date(
-        receivedDate
-      ),
+      vehicleNumber: vehicleNumber || null,
+      ewayNumber: ewayNumber || null,
+      receivedDate: new Date(receivedDate),
       receivedWeight: totalWeight,
     },
   });
@@ -111,29 +68,19 @@ export async function createChallan(
     data: validItems.map((item) => ({
       itemName: item.itemName,
       itemCategoryId: item.itemCategoryId,
-      size: item.size,
-
+      sizeId: item.sizeId,   // ✅ FIXED
       receivedWeight: item.receivedWeight,
-
-      pendingProductionWeight:
-        item.receivedWeight,
-
+      pendingProductionWeight: item.receivedWeight,
       readyWeight: 0,
-
       status: "RECEIVED",
-
       challanId: challan.id,
     })),
   });
-  const cookieStore =
-    await cookies();
 
-  const token =
-    cookieStore.get("session")?.value;
+  const token = (await cookies()).get("session")?.value;
 
   if (token) {
-    const payload =
-      await verifyToken(token);
+    const payload = await verifyToken(token);
 
     await logActivity(
       Number(payload.userId),
@@ -141,5 +88,6 @@ export async function createChallan(
       `Created challan ${challanNumber}`
     );
   }
+
   redirect("/challans");
-}
+} 

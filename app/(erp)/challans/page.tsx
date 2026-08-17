@@ -27,12 +27,18 @@ export default async function ChallansPage() {
           </p>
         </div>
 
-        <Link
-          href="/challans/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          + New Challan
-        </Link>
+        <div className="flex gap-2">
+
+          <Link
+            href="/challans/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            + New Challan
+          </Link>
+
+          
+
+        </div>
 
       </div>
 

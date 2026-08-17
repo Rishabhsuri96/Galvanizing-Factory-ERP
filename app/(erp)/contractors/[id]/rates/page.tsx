@@ -6,9 +6,9 @@ import RateInputRow from "./RateInputRow";
 export default async function ContractorRatesPage({
     params,
 }: {
-    params: Promise<{ id: string }>;
+    params: { id: string };
 }) {
-    const { id } = await params;
+    params: { id: string };
 
     const contractorId = Number(id);
 

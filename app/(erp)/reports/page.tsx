@@ -37,17 +37,18 @@ export default function ReportsPage() {
         </Link>
 
         <Link
-          href="/production"
+          href="/reports/production"
           className="rounded-xl border bg-white p-6 shadow-sm hover:bg-gray-50"
         >
           <h2 className="text-xl font-semibold">
-            Ready Material Report
+            Production Report
           </h2>
 
           <p className="mt-2 text-gray-500">
-            Material ready for dispatch
+            Production batches, zinc consumption and contractor cost
           </p>
         </Link>
+
 
         <Link
           href="/parties"
@@ -64,6 +65,6 @@ export default function ReportsPage() {
 
       </div>
 
-    </div>
+    </div >
   );
 }

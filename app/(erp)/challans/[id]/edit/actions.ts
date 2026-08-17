@@ -9,8 +9,7 @@ import { redirect } from "next/navigation";
 
 type ItemInput = {
   itemCategoryId: string;
-  size: string;
-  customSize?: string;
+  sizeId: string;   // ✅ FIXED
   itemName: string;
   weight: string;
 };
@@ -19,61 +18,52 @@ export async function updateChallan(
   challanId: number,
   formData: FormData
 ) {
-  const partyId = Number(
-    formData.get("partyId")
-  );
-  const challanNumber =
-    formData.get("challanNumber")?.toString().trim();
-  const vehicleNumber =
-    formData.get("vehicleNumber")?.toString().trim();
-  const ewayNumber =
-    formData.get("ewayNumber")?.toString().trim();
-  const receivedDate =
-    formData.get("receivedDate")?.toString();
-  const itemsJson =
-    formData.get("items") as string;
+  const partyId = Number(formData.get("partyId"));
+  const challanNumber = formData
+    .get("challanNumber")
+    ?.toString()
+    .trim();
 
-  const items =
-    JSON.parse(itemsJson) as ItemInput[];
-  const activeCategories =
-    await prisma.itemCategory.findMany({
-      where: {
-        isActive: true,
-      },
-      select: {
-        id: true,
-      },
-    });
+  const vehicleNumber = formData
+    .get("vehicleNumber")
+    ?.toString()
+    .trim();
+
+  const ewayNumber = formData
+    .get("ewayNumber")
+    ?.toString()
+    .trim();
+
+  const receivedDate = formData
+    .get("receivedDate")
+    ?.toString();
+
+  const itemsJson = formData.get("items") as string;
+  const items = JSON.parse(itemsJson) as ItemInput[];
+
+  // ✅ VALIDATE CATEGORIES
+  const activeCategories = await prisma.itemCategory.findMany({
+    where: { isActive: true },
+    select: { id: true },
+  });
+
   const activeCategoryIds = new Set(
-    activeCategories.map(
-      (category) => category.id
-    )
+    activeCategories.map((c) => c.id)
   );
-  const validItems = items
-    .map((item) => {
-      const size =
-        item.size === "Other"
-          ? item.customSize?.trim()
-          : item.size?.trim();
 
-      return {
-        itemCategoryId: Number(
-          item.itemCategoryId
-        ),
-        size,
-        itemName: item.itemName.trim(),
-        receivedWeight: Number(
-          item.weight
-        ),
-      };
-    })
+  // ✅ CLEAN VALIDATION
+  const validItems = items
+    .map((item) => ({
+      itemCategoryId: Number(item.itemCategoryId),
+      sizeId: Number(item.sizeId),   // ✅ KEY FIX
+      itemName: item.itemName.trim(),
+      receivedWeight: Number(item.weight),
+    }))
     .filter(
       (item) =>
         item.itemCategoryId > 0 &&
-        activeCategoryIds.has(
-          item.itemCategoryId
-        ) &&
-        !!item.size &&
+        activeCategoryIds.has(item.itemCategoryId) &&
+        item.sizeId > 0 &&
         item.itemName !== "" &&
         item.receivedWeight > 0
     );
@@ -87,88 +77,73 @@ export async function updateChallan(
     return;
   }
 
-  const challan =
-    await prisma.challan.findUnique({
-      where: {
-        id: challanId,
-      },
-      include: {
-        items: {
-          include: {
-            dispatchItems: true,
-            productionItems: true,
-          },
+  // ✅ CHECK LOCK (dispatch/production started)
+  const challan = await prisma.challan.findUnique({
+    where: { id: challanId },
+    include: {
+      items: {
+        include: {
+          dispatchItems: true,
+          productionItems: true,
         },
       },
-    });
+    },
+  });
 
-  if (!challan) {
-    return;
-  }
+  if (!challan) return;
 
-  const hasStartedWork =
-    challan.items.some(
-      (item) =>
-        item.dispatchItems.length > 0 ||
-        item.productionItems.length > 0
-    );
+  const hasStartedWork = challan.items.some(
+    (item) =>
+      item.dispatchItems.length > 0 ||
+      item.productionItems.length > 0
+  );
 
   if (hasStartedWork) {
     redirect(`/challans/${challanId}`);
   }
 
   const totalWeight = validItems.reduce(
-    (sum, item) =>
-      sum + item.receivedWeight,
+    (sum, item) => sum + item.receivedWeight,
     0
   );
 
+  // ✅ TRANSACTION
   await prisma.$transaction(async (tx) => {
     await tx.challan.update({
-      where: {
-        id: challanId,
-      },
+      where: { id: challanId },
       data: {
         partyId,
         challanNumber,
-        vehicleNumber:
-          vehicleNumber || null,
-        ewayNumber:
-          ewayNumber || null,
-        receivedDate: new Date(
-          receivedDate
-        ),
+        vehicleNumber: vehicleNumber || null,
+        ewayNumber: ewayNumber || null,
+        receivedDate: new Date(receivedDate),
         receivedWeight: totalWeight,
       },
     });
 
     await tx.challanItem.deleteMany({
-      where: {
-        challanId,
-      },
+      where: { challanId },
     });
 
     await tx.challanItem.createMany({
       data: validItems.map((item) => ({
         challanId,
         itemName: item.itemName,
-        itemCategoryId:
-          item.itemCategoryId,
-        size: item.size,
-        receivedWeight:
-          item.receivedWeight,
-        pendingProductionWeight:
-          item.receivedWeight,
+        itemCategoryId: item.itemCategoryId,
+        sizeId: item.sizeId,   // ✅ FIXED
+        receivedWeight: item.receivedWeight,
+        pendingProductionWeight: item.receivedWeight,
+        readyWeight: 0,
+        status: "RECEIVED",
       })),
     });
   });
 
-  const token =
-    (await cookies()).get("session")?.value;
+  // ✅ ACTIVITY LOG
+  const token = (await cookies()).get("session")?.value;
 
   if (token) {
-    const payload =
-      await verifyToken(token);
+    const payload = await verifyToken(token);
 
     await logActivity(
       Number(payload.userId),
@@ -179,5 +154,6 @@ export async function updateChallan(
 
   revalidatePath("/challans");
   revalidatePath(`/challans/${challanId}`);
+
   redirect(`/challans/${challanId}`);
 }

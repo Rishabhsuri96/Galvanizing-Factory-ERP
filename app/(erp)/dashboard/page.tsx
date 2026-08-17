@@ -96,6 +96,30 @@ export default async function DashboardPage() {
 
   const totalParties =
     await prisma.party.count();
+  const todayProduction =
+    await prisma.productionBatchItem.aggregate({
+      where: {
+        completedAt: {
+          gte: today,
+        },
+      },
+      _sum: {
+        inputWeight: true,
+        outputWeight: true,
+        contractorAmount: true,
+      },
+    });
+
+  const activeProductionBatches =
+    await prisma.productionBatch.count({
+      where: {
+        items: {
+          some: {
+            completedAt: null,
+          },
+        },
+      },
+    });
 
   const recentDispatches =
     await prisma.dispatch.findMany({
@@ -114,7 +138,7 @@ export default async function DashboardPage() {
         Factory Dashboard
       </h1>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Link href="/pending-challans">
           <div className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition cursor-pointer">
             <h2 className="text-sm text-gray-500">
@@ -180,7 +204,49 @@ export default async function DashboardPage() {
             {totalParties}
           </p>
         </div>
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-sm text-gray-500">
+            Today's Production
+          </h2>
+
+          <p className="mt-2 text-3xl font-bold">
+            {todayProduction._sum.inputWeight ?? 0} kg
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-sm text-gray-500">
+            Today's Output
+          </h2>
+
+          <p className="mt-2 text-3xl font-bold text-green-600">
+            {todayProduction._sum.outputWeight ?? 0} kg
+          </p>
+        </div>
+
+       
+
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-sm text-gray-500">
+            Today's Contractor Cost
+          </h2>
+
+          <p className="mt-2 text-3xl font-bold text-purple-600">
+            ₹ {todayProduction._sum.contractorAmount ?? 0}
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-sm text-gray-500">
+            Active Production Batches
+          </h2>
+
+          <p className="mt-2 text-3xl font-bold">
+            {activeProductionBatches}
+          </p>
+        </div>
       </div>
+
 
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">

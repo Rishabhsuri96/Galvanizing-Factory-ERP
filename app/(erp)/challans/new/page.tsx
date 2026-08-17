@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createChallan } from "./actions";
 export default async function NewChallanPage() {
 
-    const [parties, itemCategories] =
+    const [parties, itemCategories, sizes] =
         await Promise.all([
             prisma.party.findMany({
                 where: {
@@ -29,6 +29,15 @@ export default async function NewChallanPage() {
                     name: true,
                 },
             }),
+            prisma.size.findMany({
+                where: { isActive: true },
+                orderBy: { name: "asc" },
+                select: {
+                    id: true,
+                    name: true,
+                    itemCategoryId: true,
+                },
+            }),
         ]);
 
     return (
@@ -42,6 +51,7 @@ export default async function NewChallanPage() {
                 <ChallanForm
                     parties={parties}
                     itemCategories={itemCategories}
+                    sizes={sizes}   // ✅ ADD THIS
                 />
             </form>
 

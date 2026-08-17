@@ -59,8 +59,9 @@ model ChallanItem {
   status                  ItemStatus            @default(RECEIVED)
   challanId               Int
   createdAt               DateTime              @default(now())
-  itemCategoryId          Int?
-  size                    String?
+  itemCategoryId          Int
+  sizeId Int
+  size                    Size?                 @relation(fields: [sizeId], references: [id])
   pendingProductionWeight Float
   readyWeight             Float                 @default(0)
   updatedAt               DateTime              @updatedAt
@@ -71,7 +72,8 @@ model ChallanItem {
 
   @@index([challanId])
   @@index([itemCategoryId])
-  @@index([itemCategoryId, size])
+  @@index([itemCategoryId, sizeId])
+  @@index([sizeId])
   @@index([status])
   @@index([readyWeight])
   @@index([pendingProductionWeight])
@@ -155,7 +157,8 @@ model ContractorRate {
 
   contractor   Contractor   @relation(fields: [contractorId], references: [id])
   itemCategory ItemCategory @relation(fields: [itemCategoryId], references: [id])
-  size         Size?        @relation(fields: [sizeId], references: [id])
+  size          Size? @relation(fields: [sizeId], references: [id])
+  productionItems ProductionBatchItem[]   
 
   @@unique([contractorId, itemCategoryId, sizeId, effectiveFrom])
   @@index([contractorId])
@@ -164,6 +167,8 @@ model ContractorRate {
   @@index([isActive])
   @@index([contractorId, itemCategoryId, sizeId])
   @@index([contractorId, itemCategoryId, sizeId, effectiveFrom])
+  @@index([contractorId, itemCategoryId, sizeId, isActive])
+  @@index([contractorId, itemCategoryId, isActive])
 }
 
 model Furnace {
@@ -183,7 +188,6 @@ model ProductionBatch {
   furnaceId    Int
   remarks      String?
   createdAt    DateTime              @default(now())
-  shift        Shift
   updatedAt    DateTime              @updatedAt
   contractor   Contractor            @relation(fields: [contractorId], references: [id])
   furnace      Furnace               @relation(fields: [furnaceId], references: [id])
@@ -192,6 +196,7 @@ model ProductionBatch {
   @@index([contractorId])
   @@index([furnaceId])
   @@index([processDate])
+  shift Shift @default(DAY)
 }
 model ProductionBatchItem {
   id                Int             @id @default(autoincrement())
@@ -203,13 +208,9 @@ model ProductionBatchItem {
   inputWeight       Float
   outputWeight      Float?
 
-  // Zinc Analysis
-  zincAddedWeight   Float?
-  zincPercentage    Float?
-
   // Contractor
-  contractorRate    Float?
-  contractorAmount  Float?
+  contractorRate    Float
+  contractorAmount  Float
 
   // Other
   remarks           String?
@@ -226,6 +227,9 @@ model ProductionBatchItem {
   @@index([productionBatchId, challanItemId])
   @@index([createdAt])
   @@index([completedAt])
+  rateSourceId Int?
+  rateSource   ContractorRate? @relation(fields: [rateSourceId], references: [id])
+  @@unique([productionBatchId, challanItemId])
 }
 model ItemCategory {
   id           Int              @id @default(autoincrement())
@@ -242,7 +246,7 @@ model Size {
   id Int @id @default(autoincrement())
 
   name String
-
+  challanItems ChallanItem[]   
   itemCategoryId  Int
   itemCategory    ItemCategory     @relation(fields: [itemCategoryId], references: [id])
   contractorRates ContractorRate[]
@@ -272,4 +276,33 @@ enum ItemStatus {
 enum Shift {
   DAY
   NIGHT
+}
+model ZincInventory {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  type        ZincTransactionType
+  weight      Float
+  ratePerKg   Float?
+  supplier    String?
+  remarks     String?
+  createdAt   DateTime @default(now())
+}
+
+enum ZincTransactionType {
+  PURCHASE
+  ADJUSTMENT
+}
+enum ChemicalType {
+  IN
+  OUT
+}
+model ChemicalInventory {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  chemical    String
+  weight      Float
+  supplier    String?
+  remarks     String?
+  createdAt   DateTime @default(now())
+  type        ChemicalType
 }
